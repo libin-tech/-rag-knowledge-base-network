@@ -1,11 +1,11 @@
-# 家庭小助手 RAG 系统 - 代码注释说明
+# RAG 企业知识库问答系统 - 代码注释说明
 
 ## 项目结构概览
 
 ```
-family-assistant/
-├── src/main/java/com/family/assistant/
-│   ├── FamilyAssistantApplication.java    # 主启动类
+rag-knowledge-base/
+├── src/main/java/com/ragknowledge/
+│   ├── RagKnowledgeBaseApplication.java    # 主启动类
 │   ├── config/                            # 配置类目录
 │   │   ├── AuthProperties.java           # 认证配置属性
 │   │   ├── EmbeddingModelConfig.java     # Embedding 模型配置
@@ -319,7 +319,7 @@ docker-compose up -d milvus-standalone etcd minio
 mvn clean package -DskipTests
 
 # 3. 运行应用
-java -jar target/family-assistant-1.0.0.jar
+java -jar target/rag-knowledge-base-1.0.0.jar
 
 # 4. 访问管理后台
 http://localhost:8080/login

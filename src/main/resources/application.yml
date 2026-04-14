@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: family-assistant
+    name: rag-knowledge-base
   servlet:
     multipart:
       max-file-size: 50MB

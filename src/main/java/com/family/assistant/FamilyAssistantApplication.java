@@ -4,7 +4,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * 家庭小助手应用程序主启动类
+ * RAG企业知识库问答系统应用程序主启动类
  * 
  * 这是一个基于 Spring Boot 和 LangChain4j 的 RAG (检索增强生成) 系统
  * 主要功能：

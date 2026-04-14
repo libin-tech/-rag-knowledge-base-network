@@ -303,8 +303,8 @@ public class AdminController {
     @PostMapping(value = "/api/query/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @ResponseBody
     public SseEmitter queryStream(@RequestBody Map<String, String> request) {
-        // 创建 SSE 发射器，设置超时时间为 5 分钟
-        SseEmitter emitter = new SseEmitter(5 * 60 * 1000L);
+        // 创建 SSE 发射器，设置超时时间为 1 分钟
+        SseEmitter emitter = new SseEmitter(60 * 1000L);
         
         // 从请求体中获取用户问题
         String question = request.get("question");

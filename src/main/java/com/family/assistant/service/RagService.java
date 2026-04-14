@@ -216,11 +216,9 @@ public class RagService {
 
             // 执行流式对话
             TokenStream tokenStream = streamingAssistant.chat(question);
-            
-            tokenStream.onNext((text) -> {
-                // 每次生成一个 token 时调用回调
-                onNext.accept(text);
-            }).onComplete((response) -> {
+
+            // 每次生成一个 token 时调用回调
+            tokenStream.onNext(onNext).onComplete((response) -> {
                 // 完成时记录 token 使用统计
                 TokenUsage tokenUsage = response.tokenUsage();
                 log.info("AI 回答完成（流式），Token 使用: {}", tokenUsage);

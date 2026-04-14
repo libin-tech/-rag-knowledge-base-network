@@ -62,12 +62,12 @@ services:
       timeout: 20s
       retries: 3
 
-  # 家庭助手应用
-  family-assistant:
+  # RAG 知识库应用
+  rag-knowledge-base:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: family-assistant
+    container_name: rag-knowledge-base
     restart: always
     ports:
       - "8080:8080"
@@ -105,4 +105,4 @@ volumes:
 
 networks:
   default:
-    name: family-assistant-network
+    name: rag-knowledge-base-network

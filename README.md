@@ -1,13 +1,13 @@
-# 家庭小助手 RAG 系统
+# RAG 企业知识库问答系统
 
-基于 LangChain4j + Spring Boot + Milvus 的家庭规章制度智能问答系统，支持飞书机器人接入。
+基于 LangChain4j + Spring Boot + Milvus 的企业级知识库智能问答系统，支持飞书机器人接入。
 
 ## 功能特性
 
-- 📄 **PDF 文档管理**: 上传家庭规章制度 PDF 文档
-- 🔍 **智能问答**: 基于 RAG 技术的文档检索和问答
+- 📄 **知识库文档管理**: 上传企业文档（支持 PDF 格式）
+- 🔍 **智能问答**: 基于 RAG 技术的知识库检索和问答
 - 🤖 **飞书集成**: 支持通过飞书机器人进行问答
-- ☁️ **双模式支持**: 
+- ☁️ **双模式支持**:
   - 云端模式: 阿里云 DashScope (qwen-plus)
   - 本地模式: Ollama (qwen3)
 - 🐳 **Docker 部署**: 一键启动所有服务
@@ -85,7 +85,7 @@ docker-compose up -d
 
 #### 查看日志
 ```bash
-docker-compose logs -f family-assistant
+docker-compose logs -f rag-knowledge-base
 ```
 
 #### 停止服务
@@ -111,10 +111,10 @@ mvn clean package -DskipTests
 
 #### 3. 运行应用
 ```bash
-java -jar target/family-assistant-1.0.0.jar
+java -jar target/rag-knowledge-base-1.0.0.jar
 ```
 
-或使用 IDE 直接运行 `FamilyAssistantApplication.java`
+或使用 IDE 直接运行 `RagKnowledgeBaseApplication.java`
 
 ## 管理后台
 
@@ -143,7 +143,8 @@ java -jar target/family-assistant-1.0.0.jar
 3. **问答测试** (`/admin/chat`)
    - 类聊天界面测试问答
    - 支持多轮对话
-   - 打字指示器动画
+   - 打字机效果流式输出
+   - Token 消耗统计
 
 ## API 接口
 
@@ -164,7 +165,7 @@ curl -X POST http://localhost:8080/api/upload/batch \
 ```bash
 curl -X POST http://localhost:8080/api/query \
   -H "Content-Type: application/json" \
-  -d '{"question": "家庭作息时间是如何安排的？"}'
+  -d '{"question": "公司的休假政策是什么？"}'
 ```
 
 ### 4. 健康检查
@@ -231,9 +232,9 @@ llm:
 ## 项目结构
 
 ```
-family-assistant/
-├── src/main/java/com/family/assistant/
-│   ├── FamilyAssistantApplication.java    # 主启动类
+rag-knowledge-base/
+├── src/main/java/com/ragknowledge/
+│   ├── RagKnowledgeBaseApplication.java    # 主启动类
 │   ├── config/
 │   │   ├── LlmProperties.java            # LLM 配置
 │   │   ├── EmbeddingProperties.java      # Embedding 配置
@@ -289,7 +290,7 @@ ollama pull nomic-embed-text
 
 ### 3. 飞书消息无响应
 - 检查 Webhook URL 配置是否正确
-- 查看应用日志: `docker-compose logs -f family-assistant`
+- 查看应用日志: `docker-compose logs -f rag-knowledge-base`
 - 确认飞书应用权限已配置
 
 ### 4. PDF 解析失败
