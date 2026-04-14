@@ -351,8 +351,8 @@ public class AdminController {
                                 .data(Map.of(
                                         "fullAnswer", fullAnswer.toString(),
                                         "tokenUsage", Map.of(
-                                                "promptTokens", tokenUsage.promptTokenCount(),
-                                                "completionTokens", tokenUsage.completionTokenCount(),
+                                                "promptTokens", tokenUsage.inputTokenCount(),
+                                                "completionTokens", tokenUsage.outputTokenCount(),
                                                 "totalTokens", tokenUsage.totalTokenCount()
                                         )
                                 )));
