@@ -247,11 +247,11 @@
             border-radius: 12px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
-        
+
         .typing-indicator.show {
             display: inline-block;
         }
-        
+
         .typing-indicator span {
             height: 8px;
             width: 8px;
@@ -261,21 +261,90 @@
             margin: 0 2px;
             animation: typing 1.4s infinite;
         }
-        
+
         .typing-indicator span:nth-child(2) {
             animation-delay: 0.2s;
         }
-        
+
         .typing-indicator span:nth-child(3) {
             animation-delay: 0.4s;
         }
-        
+
         @keyframes typing {
             0%, 60%, 100% {
                 transform: translateY(0);
             }
             30% {
                 transform: translateY(-10px);
+            }
+        }
+
+        /* 流式加载 loading 效果 */
+        .streaming-loading {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            margin-top: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.85rem;
+        }
+
+        .streaming-loading.hide {
+            display: none;
+        }
+
+        .loading-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            flex: 1;
+        }
+
+        .loading-dots {
+            display: inline-flex;
+            gap: 2px;
+            margin-left: 4px;
+        }
+
+        .loading-dots span {
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            animation: dotPulse 1.4s infinite;
+        }
+
+        .loading-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loading-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes dotPulse {
+            0%, 80%, 100% {
+                opacity: 0.3;
+                transform: scale(0.8);
+            }
+            40% {
+                opacity: 1;
+                transform: scale(1.2);
             }
         }
         
@@ -464,15 +533,29 @@
             if (eventType === 'message') {
                 // 更新助手消息内容（打字机效果）
                 updateAssistantMessage(assistantMessageDiv, data.fullAnswer, false);
+                // 隐藏 loading
+                hideLoading(assistantMessageDiv);
             } else if (eventType === 'done') {
                 // 完成，显示 token 统计
                 updateAssistantMessage(assistantMessageDiv, data.fullAnswer, false, true);
+                // 隐藏 loading
+                hideLoading(assistantMessageDiv);
                 if (data.tokenUsage) {
                     showTokenStats(data.tokenUsage);
                 }
             } else if (eventType === 'error') {
                 // 错误
                 updateAssistantMessage(assistantMessageDiv, '抱歉，出现错误：' + data.message, true);
+                // 隐藏 loading
+                hideLoading(assistantMessageDiv);
+            }
+        }
+
+        // 隐藏 loading 效果
+        function hideLoading(messageDiv) {
+            const loadingDiv = messageDiv.querySelector('.streaming-loading');
+            if (loadingDiv) {
+                loadingDiv.classList.add('hide');
             }
         }
 
@@ -487,18 +570,35 @@
 
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';
-            
+
             // 添加打字机光标
             const textSpan = document.createElement('span');
             textSpan.className = 'message-text';
             contentDiv.appendChild(textSpan);
-            
+
             // 添加打字指示器
             const cursorSpan = document.createElement('span');
             cursorSpan.className = 'typing-cursor';
             cursorSpan.innerHTML = '&nbsp;';
             cursorSpan.style.animation = 'blink 1s infinite';
             contentDiv.appendChild(cursorSpan);
+
+            // 添加 loading 效果容器
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'streaming-loading';
+            loadingDiv.id = 'streamingLoading';
+            loadingDiv.innerHTML = `
+                <div class="loading-spinner"></div>
+                <div class="loading-text">
+                    思考中
+                    <div class="loading-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            `;
+            contentDiv.appendChild(loadingDiv);
 
             // 添加 token 信息容器
             const tokenInfoDiv = document.createElement('div');
