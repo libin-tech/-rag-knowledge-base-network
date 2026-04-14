@@ -608,36 +608,32 @@
                     // 处理 SSE 格式的数据
                     // Spring SSE 格式: event:message\ndata:{"content":"...","fullAnswer":"..."}\n\n
                     const lines = buffer.split('\n');
-                    buffer = '';
+                    buffer = lines.pop() || ''; // 保留最后一个不完整的行
 
-                    let i = 0;
-                    while (i < lines.length) {
+                    for (let i = 0; i < lines.length; i++) {
                         const line = lines[i].trim();
 
                         if (line.startsWith('event:')) {
                             const eventType = line.substring(6).trim();
 
                             // 查找下一个 data: 行
-                            i++;
-                            while (i < lines.length) {
-                                const dataLine = lines[i].trim();
+                            for (let j = i + 1; j < lines.length; j++) {
+                                const dataLine = lines[j].trim();
                                 if (dataLine.startsWith('data:')) {
                                     try {
                                         const jsonStr = dataLine.substring(5).trim();
                                         if (jsonStr) {
                                             const data = JSON.parse(jsonStr);
+                                            console.log('收到 SSE 数据:', eventType, data); // 调试日志
                                             handleSSEEvent(eventType, data, assistantMessageDiv);
                                         }
                                     } catch (e) {
-                                        console.error('解析 SSE 数据失败:', e, '原始数据:', lines[i]);
+                                        console.error('解析 SSE 数据失败:', e, '原始数据:', lines[j]);
                                     }
                                     break;
                                 }
-                                i++;
                             }
                         }
-
-                        i++;
                     }
                 }
             } catch (error) {
@@ -862,7 +858,8 @@
 
             // 控制光标显示
             if (cursorSpan) {
-                cursorSpan.style.display = showCursor ? 'none' : 'inline';
+                // 只有在明确要求显示光标时才显示
+                cursorSpan.style.display = showCursor ? 'inline' : 'none';
             }
 
             // 滚动到底部
