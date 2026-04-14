@@ -222,7 +222,18 @@ public class RagService {
                 // 完成时记录 token 使用统计
                 TokenUsage tokenUsage = response.tokenUsage();
                 log.info("AI 回答完成（流式），Token 使用: {}", tokenUsage);
-                onComplete.accept(tokenUsage);
+                log.info("Token 详情 - inputTokenCount: {}, outputTokenCount: {}, totalTokenCount: {}", 
+                        tokenUsage != null ? tokenUsage.inputTokenCount() : "null",
+                        tokenUsage != null ? tokenUsage.outputTokenCount() : "null",
+                        tokenUsage != null ? tokenUsage.totalTokenCount() : "null");
+                if (tokenUsage != null) {
+                    onComplete.accept(tokenUsage);
+                } else {
+                    log.warn("tokenUsage 为 null，使用默认值");
+                    // 如果为 null，创建一个默认的 TokenUsage
+                    TokenUsage defaultUsage = new TokenUsage(0, 0, 0);
+                    onComplete.accept(defaultUsage);
+                }
             }).onError((error) -> {
                 // 错误时记录日志并回调
                 log.error("流式生成出错", error);
