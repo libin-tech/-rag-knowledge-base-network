@@ -185,6 +185,22 @@
         /* Markdown 样式优化 */
         .message-text {
             line-height: 1.6;
+            transition: opacity 0.3s ease-in;
+        }
+
+        .message-text.fade-in {
+            animation: fadeInText 0.4s ease-in;
+        }
+
+        @keyframes fadeInText {
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .message-text h1,
@@ -352,6 +368,15 @@
             border-radius: 8px;
             color: white;
             font-size: 0.85rem;
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .streaming-loading.fade-out {
+            opacity: 0;
+            transform: scale(0.95);
+            pointer-events: none;
         }
 
         .streaming-loading.hide {
@@ -625,17 +650,27 @@
         }
 
         // 处理 SSE 事件
+        let hasReceivedContent = false; // 跟踪是否已收到内容
+        
         function handleSSEEvent(eventType, data, assistantMessageDiv) {
             if (eventType === 'message') {
                 // 更新助手消息内容（打字机效果）
                 updateAssistantMessage(assistantMessageDiv, data.fullAnswer, false);
-                // 隐藏 loading
-                hideLoading(assistantMessageDiv);
+                
+                // 第一次收到内容时，延迟隐藏 loading 以获得更平滑的过渡
+                if (!hasReceivedContent) {
+                    hasReceivedContent = true;
+                    // 等待内容渲染后再开始过渡效果
+                    setTimeout(() => {
+                        hideLoading(assistantMessageDiv);
+                    }, 100);
+                }
             } else if (eventType === 'done') {
                 // 完成，显示 token 统计
                 updateAssistantMessage(assistantMessageDiv, data.fullAnswer, false, true);
                 // 隐藏 loading
                 hideLoading(assistantMessageDiv);
+                hasReceivedContent = false; // 重置状态
                 if (data.tokenUsage) {
                     showTokenStats(data.tokenUsage);
                 }
@@ -644,14 +679,28 @@
                 updateAssistantMessage(assistantMessageDiv, '抱歉，出现错误：' + data.message, true);
                 // 隐藏 loading
                 hideLoading(assistantMessageDiv);
+                hasReceivedContent = false; // 重置状态
             }
         }
 
         // 隐藏 loading 效果
         function hideLoading(messageDiv) {
             const loadingDiv = messageDiv.querySelector('.streaming-loading');
+            const textSpan = messageDiv.querySelector('.message-text');
+            
             if (loadingDiv) {
-                loadingDiv.classList.add('hide');
+                // 先添加淡出效果
+                loadingDiv.classList.add('fade-out');
+                
+                // 300ms 后隐藏元素（与 CSS transition 时间一致）
+                setTimeout(() => {
+                    loadingDiv.classList.add('hide');
+                }, 300);
+            }
+            
+            // 为文本添加淡入效果
+            if (textSpan) {
+                textSpan.classList.add('fade-in');
             }
         }
 
@@ -666,17 +715,22 @@
 
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';
+            contentDiv.style.minHeight = '60px'; // 设置最小高度避免跳动
 
             // 添加打字机光标
             const textSpan = document.createElement('span');
             textSpan.className = 'message-text';
+            textSpan.style.display = 'inline-block';
+            textSpan.style.minHeight = '20px'; // 确保有最小高度
             contentDiv.appendChild(textSpan);
 
             // 添加打字指示器
             const cursorSpan = document.createElement('span');
             cursorSpan.className = 'typing-cursor';
-            cursorSpan.innerHTML = '&nbsp;';
+            cursorSpan.innerHTML = '|';
             cursorSpan.style.animation = 'blink 1s infinite';
+            cursorSpan.style.fontWeight = 'bold';
+            cursorSpan.style.color = '#667eea';
             contentDiv.appendChild(cursorSpan);
 
             // 添加 loading 效果容器
