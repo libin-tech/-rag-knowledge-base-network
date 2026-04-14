@@ -18,6 +18,7 @@ import dev.langchain4j.model.output.TokenUsage;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.service.AiServices;
+import dev.langchain4j.service.TokenStream;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingSearchResult;
@@ -206,39 +207,29 @@ public class RagService {
             // 记录用户提问日志
             log.info("用户提问（流式）: {}", question);
 
-            // 获取对话历史
-            List<dev.langchain4j.data.message.ChatMessage> messages = chatMemory.messages();
+            // 使用 AiServices 构建流式 AI 助手，整合 RAG 能力
+            StreamingAssistant streamingAssistant = AiServices.builder(StreamingAssistant.class)
+                    .streamingChatLanguageModel(streamingChatLanguageModel)
+                    .chatMemory(chatMemory)
+                    .contentRetriever(retriever)
+                    .build();
+
+            // 执行流式对话
+            TokenStream tokenStream = streamingAssistant.chat(question);
             
-            // 添加用户消息
-            messages.add(new dev.langchain4j.data.message.UserMessage(question));
-
-            // 使用流式模型进行对话
-            streamingChatLanguageModel.generate(messages, new StreamingResponseHandler<>() {
-                @Override
-                public void onNext(String token) {
-                    onNext.accept(token);
-                }
-
-                @Override
-                public void onComplete(Response<dev.langchain4j.data.message.AiMessage> response) {
-                    TokenUsage tokenUsage = response.tokenUsage();
-                    log.info("AI 回答完成（流式），Token 使用: {}", tokenUsage);
-
-                    // 将 AI 回复添加到对话历史中
-                    if (response.content() != null) {
-                        chatMemory.add(new dev.langchain4j.data.message.UserMessage(question));
-                        chatMemory.add(response.content());
-                    }
-
-                    onComplete.accept(tokenUsage);
-                }
-
-                @Override
-                public void onError(Throwable error) {
-                    log.error("流式生成出错", error);
-                    onError.accept(error);
-                }
-            });
+            tokenStream.onNext((text) -> {
+                // 每次生成一个 token 时调用回调
+                onNext.accept(text);
+            }).onComplete((response) -> {
+                // 完成时记录 token 使用统计
+                TokenUsage tokenUsage = response.tokenUsage();
+                log.info("AI 回答完成（流式），Token 使用: {}", tokenUsage);
+                onComplete.accept(tokenUsage);
+            }).onError((error) -> {
+                // 错误时记录日志并回调
+                log.error("流式生成出错", error);
+                onError.accept(error);
+            }).start();
         } catch (Exception e) {
             log.error("流式查询出错", e);
             onError.accept(e);
@@ -308,5 +299,23 @@ public class RagService {
          * @return AI 生成的回答文本
          */
         String chat(String userMessage);
+    }
+
+    /**
+     * 流式 AI 助手接口定义
+     * <p>
+     * 该接口用于支持流式输出，实现打字机效果。
+     * LangChain4j 的 AiServices 会自动代理此接口，
+     * 整合 RAG 检索、对话记忆和流式生成功能。
+     * </p>
+     */
+    public interface StreamingAssistant {
+        /**
+         * 与 AI 助手进行流式对话
+         *
+         * @param userMessage 用户输入的消息文本
+         * @return TokenStream 用于接收流式生成的内容
+         */
+        TokenStream chat(String userMessage);
     }
 }
