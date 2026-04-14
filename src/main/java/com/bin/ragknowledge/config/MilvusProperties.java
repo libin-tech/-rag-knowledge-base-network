@@ -1,4 +1,4 @@
-package com.family.assistant.config;
+package com.bin.ragknowledge.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

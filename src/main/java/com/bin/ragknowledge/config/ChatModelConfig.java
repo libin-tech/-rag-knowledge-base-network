@@ -1,4 +1,4 @@
-package com.family.assistant.config;
+package com.bin.ragknowledge.config;
 
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;

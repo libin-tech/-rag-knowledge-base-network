@@ -1,10 +1,10 @@
-package com.family.assistant.controller;
+package com.bin.ragknowledge.controller;
 
-import com.family.assistant.dto.FeishuMessage;
-import com.family.assistant.dto.FeishuResponse;
-import com.family.assistant.service.DocumentService;
-import com.family.assistant.service.FeishuService;
-import com.family.assistant.service.RagService;
+import com.bin.ragknowledge.dto.FeishuMessage;
+import com.bin.ragknowledge.dto.FeishuResponse;
+import com.bin.ragknowledge.service.DocumentService;
+import com.bin.ragknowledge.service.FeishuService;
+import com.bin.ragknowledge.service.RagService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

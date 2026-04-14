@@ -5,7 +5,12 @@
       "Bash(git commit *)",
       "Bash(git config *)",
       "Bash(git push *)",
-      "Bash(mvnw.cmd *)"
+      "Bash(mvnw.cmd *)",
+      "Bash(dir *)",
+      "Bash(mkdir *)",
+      "Bash(xcopy *)",
+      "Bash(move *)",
+      "Bash(rmdir *)"
     ]
   },
   "$version": 3

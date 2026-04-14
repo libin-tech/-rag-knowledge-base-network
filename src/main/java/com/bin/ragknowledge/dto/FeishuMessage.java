@@ -1,4 +1,4 @@
-package com.family.assistant.dto;
+package com.bin.ragknowledge.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

@@ -1,6 +1,6 @@
-package com.family.assistant.service;
+package com.bin.ragknowledge.service;
 
-import com.family.assistant.config.AuthProperties;
+import com.bin.ragknowledge.config.AuthProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.User;

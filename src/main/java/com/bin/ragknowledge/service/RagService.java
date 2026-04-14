@@ -1,7 +1,7 @@
-package com.family.assistant.service;
+package com.bin.ragknowledge.service;
 
 import cn.hutool.core.util.IdUtil;
-import com.family.assistant.config.RagProperties;
+import com.bin.ragknowledge.config.RagProperties;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.DocumentSplitter;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;

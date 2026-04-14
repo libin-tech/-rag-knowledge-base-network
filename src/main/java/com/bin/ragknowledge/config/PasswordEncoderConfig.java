@@ -1,4 +1,4 @@
-package com.family.assistant.config;
+package com.bin.ragknowledge.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

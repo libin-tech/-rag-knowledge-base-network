@@ -1,4 +1,4 @@
-package com.family.assistant.controller;
+package com.bin.ragknowledge.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;

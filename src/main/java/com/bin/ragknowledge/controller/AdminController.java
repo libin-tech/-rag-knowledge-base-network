@@ -1,7 +1,7 @@
-package com.family.assistant.controller;
+package com.bin.ragknowledge.controller;
 
-import com.family.assistant.service.DocumentService;
-import com.family.assistant.service.RagService;
+import com.bin.ragknowledge.service.DocumentService;
+import com.bin.ragknowledge.service.RagService;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.model.output.TokenUsage;
 import lombok.Data;

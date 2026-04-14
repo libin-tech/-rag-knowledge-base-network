@@ -1,4 +1,4 @@
-package com.family.assistant.dto;
+package com.bin.ragknowledge.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;

@@ -1,7 +1,7 @@
-package com.family.assistant.service;
+package com.bin.ragknowledge.service;
 
-import com.family.assistant.config.FeishuProperties;
-import com.family.assistant.dto.FeishuMessage;
+import com.bin.ragknowledge.config.FeishuProperties;
+import com.bin.ragknowledge.dto.FeishuMessage;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;

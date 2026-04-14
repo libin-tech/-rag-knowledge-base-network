@@ -1,4 +1,4 @@
-package com.family.assistant.config;
+package com.bin.ragknowledge.config;
 
 import com.alibaba.dashscope.utils.JsonUtils;
 import dev.langchain4j.data.segment.TextSegment;

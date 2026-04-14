@@ -1,4 +1,4 @@
-package com.family.assistant.service;
+package com.bin.ragknowledge.service;
 
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.parser.apache.pdfbox.ApachePdfBoxDocumentParser;
