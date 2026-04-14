@@ -10,7 +10,8 @@
       "Bash(mkdir *)",
       "Bash(xcopy *)",
       "Bash(move *)",
-      "Bash(rmdir *)"
+      "Bash(rmdir *)",
+      "Bash(git remote *)"
     ]
   },
   "$version": 3

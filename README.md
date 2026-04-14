@@ -32,8 +32,8 @@
 ### 前置要求
 
 - Docker & Docker Compose
-- JDK 17+ (本地开发)
-- Maven 3.6+ (本地开发)
+- JDK 21+ (本地开发)
+- Maven 3.9+ (本地开发)
 
 ### 配置环境变量
 
