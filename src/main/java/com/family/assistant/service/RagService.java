@@ -213,7 +213,7 @@ public class RagService {
             messages.add(new dev.langchain4j.data.message.UserMessage(question));
 
             // 使用流式模型进行对话
-            streamingChatLanguageModel.generate(messages, new StreamingResponseHandler<dev.langchain4j.data.message.AiMessage>() {
+            streamingChatLanguageModel.generate(messages, new StreamingResponseHandler<>() {
                 @Override
                 public void onNext(String token) {
                     onNext.accept(token);
@@ -223,13 +223,13 @@ public class RagService {
                 public void onComplete(Response<dev.langchain4j.data.message.AiMessage> response) {
                     TokenUsage tokenUsage = response.tokenUsage();
                     log.info("AI 回答完成（流式），Token 使用: {}", tokenUsage);
-                    
+
                     // 将 AI 回复添加到对话历史中
                     if (response.content() != null) {
                         chatMemory.add(new dev.langchain4j.data.message.UserMessage(question));
                         chatMemory.add(response.content());
                     }
-                    
+
                     onComplete.accept(tokenUsage);
                 }
 
