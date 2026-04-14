@@ -181,6 +181,69 @@
             font-weight: 600;
             color: var(--primary-color);
         }
+
+        /* Markdown 样式优化 */
+        .message-text {
+            line-height: 1.6;
+        }
+
+        .message-text h1,
+        .message-text h2,
+        .message-text h3,
+        .message-text h4 {
+            margin-top: 16px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .message-text h1 { font-size: 1.5em; }
+        .message-text h2 { font-size: 1.3em; }
+        .message-text h3 { font-size: 1.1em; }
+
+        .message-text p {
+            margin-bottom: 12px;
+        }
+
+        .message-text ul,
+        .message-text ol {
+            margin-bottom: 12px;
+            padding-left: 24px;
+        }
+
+        .message-text li {
+            margin-bottom: 4px;
+        }
+
+        .message-text blockquote {
+            border-left: 4px solid var(--primary-color);
+            padding-left: 16px;
+            margin: 12px 0;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        /* 代码复制按钮 */
+        .copy-code-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 4px 12px;
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.2s;
+            opacity: 0;
+        }
+
+        pre:hover .copy-code-btn {
+            opacity: 1;
+        }
+
+        .copy-code-btn:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
         
         .message-avatar {
             width: 36px;
@@ -445,7 +508,24 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Marked.js 用于 Markdown 解析 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Highlight.js 用于代码高亮 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/highlight.min.js"></script>
     <script>
+        // 配置 Marked.js
+        marked.setOptions({
+            highlight: function(code, lang) {
+                if (lang && hljs.getLanguage(lang)) {
+                    return hljs.highlight(code, { language: lang }).value;
+                }
+                return hljs.highlightAuto(code).value;
+            },
+            breaks: true,  // 支持换行
+            gfm: true,     // 启用 GitHub Flavored Markdown
+        });
+
         const chatMessages = document.getElementById('chatMessages');
         const questionInput = document.getElementById('questionInput');
         const sendButton = document.getElementById('sendButton');
@@ -638,10 +718,56 @@
             const tokenInfoDiv = messageDiv.querySelector('.token-info');
             const contentDiv = messageDiv.querySelector('.message-content');
 
-            // 更新文本内容
+            // 更新文本内容，使用 Markdown 渲染
             if (textSpan) {
-                // 使用 innerHTML 支持 Markdown 等基本格式
-                textSpan.textContent = content;
+                // 使用 marked 解析 Markdown，渲染为 HTML
+                textSpan.innerHTML = marked.parse(content || '');
+                
+                // 为代码块添加样式和复制按钮
+                textSpan.querySelectorAll('pre code').forEach((block) => {
+                    // 创建代码块容器
+                    const pre = block.parentElement;
+                    if (pre && pre.tagName === 'PRE') {
+                        pre.style.position = 'relative';
+                        pre.style.background = '#f6f8fa';
+                        pre.style.borderRadius = '8px';
+                        pre.style.padding = '16px';
+                        pre.style.marginTop = '12px';
+                        pre.style.marginBottom = '12px';
+                        pre.style.overflow = 'auto';
+                        
+                        // 添加复制按钮
+                        const copyButton = document.createElement('button');
+                        copyButton.className = 'copy-code-btn';
+                        copyButton.innerHTML = '<i class="bi bi-clipboard"></i> 复制';
+                        copyButton.onclick = function() {
+                            navigator.clipboard.writeText(block.textContent).then(() => {
+                                copyButton.innerHTML = '<i class="bi bi-check"></i> 已复制';
+                                setTimeout(() => {
+                                    copyButton.innerHTML = '<i class="bi bi-clipboard"></i> 复制';
+                                }, 2000);
+                            });
+                        };
+                        pre.appendChild(copyButton);
+                    }
+                });
+                
+                // 为表格添加 Bootstrap 样式
+                textSpan.querySelectorAll('table').forEach((table) => {
+                    table.className = 'table table-bordered table-striped';
+                });
+                
+                // 为代码块添加滚动
+                textSpan.querySelectorAll('code').forEach((code) => {
+                    if (code.parentElement.tagName !== 'PRE') {
+                        // 行内代码
+                        code.style.background = '#f6f8fa';
+                        code.style.padding = '2px 6px';
+                        code.style.borderRadius = '4px';
+                        code.style.fontSize = '0.9em';
+                        code.style.color = '#e83e8c';
+                    }
+                });
             }
 
             // 错误样式
