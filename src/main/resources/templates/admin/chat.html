@@ -675,15 +675,16 @@
                 hideLoading(assistantMessageDiv);
                 // 隐藏打字机光标
                 hideCursor(assistantMessageDiv);
-                // 重置状态
-                hasReceivedContent = false;
-                loadingStage = 0;
+                // 显示 token 统计（传入当前消息 div）
                 if (data.tokenUsage) {
                     console.log('Token 使用情况:', data.tokenUsage); // 调试日志
-                    showTokenStats(data.tokenUsage);
+                    showTokenStats(data.tokenUsage, assistantMessageDiv);
                 } else {
                     console.warn('没有收到 tokenUsage 数据'); // 警告日志
                 }
+                // 重置状态
+                hasReceivedContent = false;
+                loadingStage = 0;
             } else if (eventType === 'error') {
                 // 错误
                 updateAssistantMessage(assistantMessageDiv, '抱歉，出现错误：' + data.message, true);
@@ -871,25 +872,37 @@
         }
 
         // 显示 Token 统计
-        function showTokenStats(tokenUsage) {
+        function showTokenStats(tokenUsage, messageDiv) {
             if (!tokenUsage) return;
 
-            // 在消息中显示
-            const lastMessage = chatMessages.querySelector('.message.assistant:last-child .token-info');
-            if (lastMessage) {
-                lastMessage.innerHTML = `
+            console.log('showTokenStats 被调用，tokenUsage:', tokenUsage); // 调试日志
+
+            // 在消息中显示（使用传入的 messageDiv）
+            const tokenInfoDiv = messageDiv ? messageDiv.querySelector('.token-info') : null;
+            if (tokenInfoDiv) {
+                tokenInfoDiv.innerHTML = `
                     <span><i class="bi bi-cpu"></i> 提示 Tokens: <span class="token-number">${tokenUsage.promptTokens}</span></span>
                     <span>回答 Tokens: <span class="token-number">${tokenUsage.completionTokens}</span></span>
                     <span>总计: <span class="token-number">${tokenUsage.totalTokens}</span></span>
                 `;
-                lastMessage.classList.add('show');
+                tokenInfoDiv.classList.add('show');
+                console.log('Token 信息已添加到消息中'); // 调试日志
+            } else {
+                console.warn('没有找到 token-info 元素'); // 警告日志
             }
 
             // 在底部统计栏显示
-            document.getElementById('promptTokens').textContent = tokenUsage.promptTokens;
-            document.getElementById('completionTokens').textContent = tokenUsage.completionTokens;
-            document.getElementById('totalTokens').textContent = tokenUsage.totalTokens;
-            tokenStats.style.display = 'block';
+            const promptTokensEl = document.getElementById('promptTokens');
+            const completionTokensEl = document.getElementById('completionTokens');
+            const totalTokensEl = document.getElementById('totalTokens');
+            
+            if (promptTokensEl) promptTokensEl.textContent = tokenUsage.promptTokens;
+            if (completionTokensEl) completionTokensEl.textContent = tokenUsage.completionTokens;
+            if (totalTokensEl) totalTokensEl.textContent = tokenUsage.totalTokens;
+            
+            if (tokenStats) {
+                tokenStats.style.display = 'block';
+            }
         }
 
         // 添加消息（保留旧方法用于用户消息）
