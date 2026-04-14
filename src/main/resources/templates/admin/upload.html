@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文档上传 - 家庭小助手管理后台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --sidebar-width: 250px;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            padding: 20px 0;
+            z-index: 1000;
+        }
+        
+        .sidebar-brand {
+            padding: 0 20px 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .sidebar-brand h4 {
+            color: white;
+            margin: 0;
+            font-size: 1.3rem;
+        }
+        
+        .sidebar-brand small {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.8rem;
+        }
+        
+        .nav-item {
+            margin: 5px 15px;
+        }
+        
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 12px 20px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+        }
+        
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 30px;
+            min-height: 100vh;
+        }
+        
+        .page-header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .page-header h2 {
+            margin: 0;
+            color: #1a202c;
+            font-size: 1.5rem;
+        }
+        
+        .page-header p {
+            margin: 5px 0 0;
+            color: #718096;
+            font-size: 0.9rem;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+        
+        .upload-zone {
+            border: 3px dashed #cbd5e0;
+            border-radius: 12px;
+            padding: 60px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f7fafc;
+        }
+        
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--primary-color);
+            background: #edf2ff;
+        }
+        
+        .upload-zone i {
+            font-size: 4rem;
+            color: #a0aec0;
+            margin-bottom: 20px;
+        }
+        
+        .upload-zone h5 {
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+        
+        .upload-zone p {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+        
+        .file-list {
+            margin-top: 20px;
+        }
+        
+        .file-item {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        
+        .file-item i {
+            color: #e53e3e;
+            margin-right: 12px;
+            font-size: 1.5rem;
+        }
+        
+        .file-info {
+            flex: 1;
+        }
+        
+        .file-name {
+            font-weight: 500;
+            color: #2d3748;
+            margin: 0;
+        }
+        
+        .file-size {
+            font-size: 0.85rem;
+            color: #718096;
+            margin: 0;
+        }
+        
+        .file-status {
+            margin-left: 12px;
+        }
+        
+        .progress {
+            height: 6px;
+            border-radius: 3px;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+        }
+        
+        .btn-primary:hover {
+            background: #4338ca;
+        }
+        
+        .btn-primary:disabled {
+            background: #a0aec0;
+        }
+        
+        .alert {
+            border-radius: 8px;
+            border: none;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <h4><i class="bi bi-house-heart-fill"></i> 家庭小助手</h4>
+            <small>管理后台</small>
+        </div>
+        <nav class="nav flex-column">
+            <a class="nav-link active" href="/admin/upload">
+                <i class="bi bi-cloud-upload-fill"></i> 文档上传
+            </a>
+            <a class="nav-link" href="/admin/documents">
+                <i class="bi bi-file-earmark-text-fill"></i> 文档管理
+            </a>
+            <a class="nav-link" href="/admin/chat">
+                <i class="bi bi-chat-dots-fill"></i> 问答测试
+            </a>
+            <a class="nav-link" href="/logout" style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+                <i class="bi bi-box-arrow-right"></i> 退出登录
+            </a>
+        </nav>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <div class="page-header">
+            <h2><i class="bi bi-cloud-upload"></i> 文档上传</h2>
+            <p>上传家庭规章制度 PDF 文档到知识库</p>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-upload"></i> 上传文件</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- 上传区域 -->
+                        <div class="upload-zone" id="uploadZone">
+                            <i class="bi bi-file-earmark-pdf"></i>
+                            <h5>拖拽 PDF 文件到这里或点击选择</h5>
+                            <p>支持单个或多个文件上传，单个文件最大 50MB</p>
+                            <input type="file" id="fileInput" accept=".pdf" multiple style="display: none;">
+                            <button class="btn btn-primary mt-3" onclick="document.getElementById('fileInput').click()">
+                                <i class="bi bi-folder2-open"></i> 选择文件
+                            </button>
+                        </div>
+
+                        <!-- 文件列表 -->
+                        <div class="file-list" id="fileList"></div>
+
+                        <!-- 上传按钮 -->
+                        <div class="text-end mt-3" id="uploadButton" style="display: none;">
+                            <button class="btn btn-primary" onclick="uploadFiles()">
+                                <i class="bi bi-cloud-upload"></i> 开始上传
+                                <span class="spinner-border spinner-border-sm loading" id="uploadLoading"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-info-circle"></i> 使用说明</h5>
+                    </div>
+                    <div class="card-body">
+                        <h6>上传步骤：</h6>
+                        <ol>
+                            <li>点击"选择文件"或拖拽 PDF 到上传区域</li>
+                            <li>确认文件列表</li>
+                            <li>点击"开始上传"按钮</li>
+                        </ol>
+                        <hr>
+                        <h6>注意事项：</h6>
+                        <ul>
+                            <li>仅支持 PDF 格式文件</li>
+                            <li>文件会被解析并存储到向量数据库</li>
+                            <li>上传完成后可在"文档管理"中查看</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 上传结果提示 -->
+        <div id="alertContainer"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let selectedFiles = [];
+
+        // 文件选择
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            handleFiles(e.target.files);
+        });
+
+        // 拖拽上传
+        const uploadZone = document.getElementById('uploadZone');
+        
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        // 处理文件
+        function handleFiles(files) {
+            selectedFiles = Array.from(files);
+            displayFileList();
+            document.getElementById('uploadButton').style.display = selectedFiles.length > 0 ? 'block' : 'none';
+        }
+
+        // 显示文件列表
+        function displayFileList() {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+
+            selectedFiles.forEach((file, index) => {
+                const fileSize = formatFileSize(file.size);
+                fileList.innerHTML += `
+                    <div class="file-item">
+                        <i class="bi bi-file-earmark-pdf"></i>
+                        <div class="file-info">
+                            <p class="file-name">${file.name}</p>
+                            <p class="file-size">${fileSize}</p>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger" onclick="removeFile(${index})">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        // 移除文件
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            displayFileList();
+            document.getElementById('uploadButton').style.display = selectedFiles.length > 0 ? 'block' : 'none';
+        }
+
+        // 上传文件
+        async function uploadFiles() {
+            if (selectedFiles.length === 0) return;
+
+            const loading = document.getElementById('uploadLoading');
+            loading.classList.add('show');
+
+            const formData = new FormData();
+            selectedFiles.forEach(file => {
+                formData.append('files', file);
+            });
+
+            try {
+                const response = await fetch('/admin/api/upload/batch', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert('success', result.message);
+                    selectedFiles = [];
+                    displayFileList();
+                    document.getElementById('uploadButton').style.display = 'none';
+                    document.getElementById('fileInput').value = '';
+                } else {
+                    showAlert('danger', result.message);
+                }
+            } catch (error) {
+                showAlert('danger', '上传失败: ' + error.message);
+            } finally {
+                loading.classList.remove('show');
+            }
+        }
+
+        // 显示提示框
+        function showAlert(type, message) {
+            const alertContainer = document.getElementById('alertContainer');
+            alertContainer.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        }
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+            return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+        }
+    </script>
+</body>
+</html>

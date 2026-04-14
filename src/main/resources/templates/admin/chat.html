@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>问答测试 - 家庭小助手管理后台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --sidebar-width: 250px;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            padding: 20px 0;
+            z-index: 1000;
+        }
+        
+        .sidebar-brand {
+            padding: 0 20px 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .sidebar-brand h4 {
+            color: white;
+            margin: 0;
+            font-size: 1.3rem;
+        }
+        
+        .sidebar-brand small {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.8rem;
+        }
+        
+        .nav-item {
+            margin: 5px 15px;
+        }
+        
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 12px 20px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+        }
+        
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 30px;
+            min-height: 100vh;
+        }
+        
+        .page-header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .page-header h2 {
+            margin: 0;
+            color: #1a202c;
+            font-size: 1.5rem;
+        }
+        
+        .page-header p {
+            margin: 5px 0 0;
+            color: #718096;
+            font-size: 0.9rem;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+        
+        .chat-container {
+            height: calc(100vh - 280px);
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 12px 12px 0 0;
+        }
+        
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .message.user {
+            justify-content: flex-end;
+        }
+        
+        .message.assistant {
+            justify-content: flex-start;
+        }
+        
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            word-wrap: break-word;
+            position: relative;
+        }
+
+        .message.user .message-content {
+            background: var(--primary-color);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            color: #2d3748;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .token-info {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.8rem;
+            color: #718096;
+            display: none;
+        }
+
+        .token-info.show {
+            display: block;
+        }
+
+        .token-info span {
+            margin-right: 12px;
+        }
+
+        .token-info .token-number {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 10px;
+        }
+        
+        .message.user .message-avatar {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        
+        .message.assistant .message-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .chat-input {
+            padding: 20px;
+            background: white;
+            border-radius: 0 0 12px 12px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .chat-input textarea {
+            resize: none;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            transition: border-color 0.3s;
+        }
+        
+        .chat-input textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: none;
+        }
+        
+        .chat-input .btn {
+            padding: 10px 24px;
+            border-radius: 8px;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background: #4338ca;
+        }
+        
+        .btn-primary:disabled {
+            background: #a0aec0;
+        }
+        
+        .typing-indicator {
+            display: none;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .typing-indicator.show {
+            display: inline-block;
+        }
+        
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background: #a0aec0;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 2px;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #a0aec0;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .message-content {
+                max-width: 85%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <h4><i class="bi bi-house-heart-fill"></i> 家庭小助手</h4>
+            <small>管理后台</small>
+        </div>
+        <nav class="nav flex-column">
+            <a class="nav-link" href="/admin/upload">
+                <i class="bi bi-cloud-upload-fill"></i> 文档上传
+            </a>
+            <a class="nav-link" href="/admin/documents">
+                <i class="bi bi-file-earmark-text-fill"></i> 文档管理
+            </a>
+            <a class="nav-link active" href="/admin/chat">
+                <i class="bi bi-chat-dots-fill"></i> 问答测试
+            </a>
+            <a class="nav-link" href="/logout" style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+                <i class="bi bi-box-arrow-right"></i> 退出登录
+            </a>
+        </nav>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <div class="page-header">
+            <h2><i class="bi bi-chat-dots"></i> 问答测试</h2>
+            <p>测试 RAG 系统的问答效果</p>
+        </div>
+
+        <div class="card chat-container">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-robot"></i> 智能助手</h5>
+            </div>
+            
+            <!-- 消息列表 -->
+            <div class="chat-messages" id="chatMessages">
+                <div class="empty-state" id="emptyState">
+                    <i class="bi bi-chat-square-quote"></i>
+                    <h5>开始对话</h5>
+                    <p>在下方输入框中输入您的问题，测试问答功能</p>
+                </div>
+            </div>
+
+            <!-- Token 统计 -->
+            <div class="card-footer text-muted" id="tokenStats" style="display: none; font-size: 0.85rem;">
+                <span class="me-3"><i class="bi bi-cpu"></i> 总 Tokens: <strong id="totalTokens">0</strong></span>
+                <span class="me-3">提示: <strong id="promptTokens">0</strong></span>
+                <span>回答: <strong id="completionTokens">0</strong></span>
+            </div>
+
+            <!-- 输入框 -->
+            <div class="chat-input">
+                <div class="row g-2">
+                    <div class="col">
+                        <textarea class="form-control" id="questionInput" rows="3" 
+                                  placeholder="输入您的问题..." 
+                                  onkeydown="handleKeyDown(event)"></textarea>
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-primary w-100" onclick="sendMessage()" id="sendButton">
+                            <i class="bi bi-send-fill"></i> 发送
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const questionInput = document.getElementById('questionInput');
+        const sendButton = document.getElementById('sendButton');
+        const emptyState = document.getElementById('emptyState');
+        const tokenStats = document.getElementById('tokenStats');
+
+        // 发送消息 - 使用流式输出
+        async function sendMessage() {
+            const question = questionInput.value.trim();
+            if (!question) return;
+
+            // 隐藏空状态
+            if (emptyState) {
+                emptyState.style.display = 'none';
+            }
+
+            // 添加用户消息
+            addMessage(question, 'user');
+
+            // 清空输入框
+            questionInput.value = '';
+
+            // 禁用发送按钮
+            sendButton.disabled = true;
+
+            // 添加打字机效果的助手消息
+            const assistantMessageDiv = addAssistantMessageWithTyping();
+
+            try {
+                // 使用 EventSource 接收 SSE 流
+                const eventSource = new EventSourcePolyfill(
+                    '/admin/api/query/stream',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ question: question })
+                    }
+                );
+
+                // 由于 EventSource 不支持 POST，我们改用 fetch + ReadableStream
+                const response = await fetch('/admin/api/query/stream', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ question: question })
+                });
+
+                if (!response.ok) {
+                    throw new Error('请求失败');
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    // 解码接收到的数据
+                    buffer += decoder.decode(value, { stream: true });
+                    
+                    // 处理 SSE 格式的数据
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || ''; // 保留最后一个不完整的行
+
+                    for (const line of lines) {
+                        if (line.startsWith('event:')) {
+                            const eventType = line.slice(6).trim();
+                            // 下一行应该是数据
+                            const nextLine = lines.shift();
+                            if (nextLine && nextLine.startsWith('data:')) {
+                                try {
+                                    const data = JSON.parse(nextLine.slice(5));
+                                    handleSSEEvent(eventType, data, assistantMessageDiv);
+                                } catch (e) {
+                                    console.error('解析 SSE 数据失败:', e);
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('请求失败:', error);
+                updateAssistantMessage(assistantMessageDiv, '请求失败：' + error.message, true);
+            } finally {
+                sendButton.disabled = false;
+                questionInput.focus();
+            }
+        }
+
+        // 处理 SSE 事件
+        function handleSSEEvent(eventType, data, assistantMessageDiv) {
+            if (eventType === 'message') {
+                // 更新助手消息内容（打字机效果）
+                updateAssistantMessage(assistantMessageDiv, data.fullAnswer, false);
+            } else if (eventType === 'done') {
+                // 完成，显示 token 统计
+                updateAssistantMessage(assistantMessageDiv, data.fullAnswer, false, true);
+                if (data.tokenUsage) {
+                    showTokenStats(data.tokenUsage);
+                }
+            } else if (eventType === 'error') {
+                // 错误
+                updateAssistantMessage(assistantMessageDiv, '抱歉，出现错误：' + data.message, true);
+            }
+        }
+
+        // 添加助手消息（带打字机效果）
+        function addAssistantMessageWithTyping() {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message assistant';
+
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = 'message-avatar';
+            avatarDiv.innerHTML = '<i class="bi bi-robot"></i>';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            // 添加打字机光标
+            const textSpan = document.createElement('span');
+            textSpan.className = 'message-text';
+            contentDiv.appendChild(textSpan);
+            
+            // 添加打字指示器
+            const cursorSpan = document.createElement('span');
+            cursorSpan.className = 'typing-cursor';
+            cursorSpan.innerHTML = '&nbsp;';
+            cursorSpan.style.animation = 'blink 1s infinite';
+            contentDiv.appendChild(cursorSpan);
+
+            // 添加 token 信息容器
+            const tokenInfoDiv = document.createElement('div');
+            tokenInfoDiv.className = 'token-info';
+
+            contentDiv.appendChild(tokenInfoDiv);
+
+            messageDiv.appendChild(avatarDiv);
+            messageDiv.appendChild(contentDiv);
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            return messageDiv;
+        }
+
+        // 更新助手消息内容
+        function updateAssistantMessage(messageDiv, content, isError, showCursor = false) {
+            const textSpan = messageDiv.querySelector('.message-text');
+            const cursorSpan = messageDiv.querySelector('.typing-cursor');
+            const tokenInfoDiv = messageDiv.querySelector('.token-info');
+            const contentDiv = messageDiv.querySelector('.message-content');
+
+            // 更新文本内容
+            if (textSpan) {
+                // 使用 innerHTML 支持 Markdown 等基本格式
+                textSpan.textContent = content;
+            }
+
+            // 错误样式
+            if (isError) {
+                contentDiv.style.background = '#fed7d7';
+                contentDiv.style.color = '#c53030';
+            }
+
+            // 控制光标显示
+            if (cursorSpan) {
+                cursorSpan.style.display = showCursor ? 'none' : 'inline';
+            }
+
+            // 滚动到底部
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // 显示 Token 统计
+        function showTokenStats(tokenUsage) {
+            if (!tokenUsage) return;
+
+            // 在消息中显示
+            const lastMessage = chatMessages.querySelector('.message.assistant:last-child .token-info');
+            if (lastMessage) {
+                lastMessage.innerHTML = `
+                    <span><i class="bi bi-cpu"></i> 提示 Tokens: <span class="token-number">${tokenUsage.promptTokens}</span></span>
+                    <span>回答 Tokens: <span class="token-number">${tokenUsage.completionTokens}</span></span>
+                    <span>总计: <span class="token-number">${tokenUsage.totalTokens}</span></span>
+                `;
+                lastMessage.classList.add('show');
+            }
+
+            // 在底部统计栏显示
+            document.getElementById('promptTokens').textContent = tokenUsage.promptTokens;
+            document.getElementById('completionTokens').textContent = tokenUsage.completionTokens;
+            document.getElementById('totalTokens').textContent = tokenUsage.totalTokens;
+            tokenStats.style.display = 'block';
+        }
+
+        // 添加消息（保留旧方法用于用户消息）
+        function addMessage(content, type, isError = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = 'message-avatar';
+            avatarDiv.innerHTML = type === 'user'
+                ? '<i class="bi bi-person-fill"></i>'
+                : '<i class="bi bi-robot"></i>';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = content;
+
+            if (isError) {
+                contentDiv.style.background = '#fed7d7';
+                contentDiv.style.color = '#c53030';
+            }
+
+            if (type === 'user') {
+                messageDiv.appendChild(contentDiv);
+                messageDiv.appendChild(avatarDiv);
+            } else {
+                messageDiv.appendChild(avatarDiv);
+                messageDiv.appendChild(contentDiv);
+            }
+
+            chatMessages.appendChild(messageDiv);
+
+            // 滚动到底部
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // 添加打字指示器（保留旧方法兼容）
+        function addTypingIndicator() {
+            const indicatorDiv = document.createElement('div');
+            indicatorDiv.className = 'message assistant';
+            indicatorDiv.id = 'typingIndicator';
+
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = 'message-avatar';
+            avatarDiv.innerHTML = '<i class="bi bi-robot"></i>';
+
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator show';
+            typingDiv.innerHTML = '<span></span><span></span><span></span>';
+
+            indicatorDiv.appendChild(avatarDiv);
+            indicatorDiv.appendChild(typingDiv);
+            chatMessages.appendChild(indicatorDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            return indicatorDiv;
+        }
+
+        // 处理键盘事件
+        function handleKeyDown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // 自动聚焦
+        questionInput.focus();
+
+        // 添加打字机光标动画
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes blink {
+                0%, 50% { opacity: 1; }
+                51%, 100% { opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
