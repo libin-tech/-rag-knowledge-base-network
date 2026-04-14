@@ -406,19 +406,7 @@
             const assistantMessageDiv = addAssistantMessageWithTyping();
 
             try {
-                // 使用 EventSource 接收 SSE 流
-                const eventSource = new EventSourcePolyfill(
-                    '/admin/api/query/stream',
-                    {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ question: question })
-                    }
-                );
-
-                // 由于 EventSource 不支持 POST，我们改用 fetch + ReadableStream
+                // 使用 fetch + ReadableStream 接收 SSE 流
                 const response = await fetch('/admin/api/query/stream', {
                     method: 'POST',
                     headers: {
@@ -441,7 +429,7 @@
 
                     // 解码接收到的数据
                     buffer += decoder.decode(value, { stream: true });
-                    
+
                     // 处理 SSE 格式的数据
                     const lines = buffer.split('\n');
                     buffer = lines.pop() || ''; // 保留最后一个不完整的行
