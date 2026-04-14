@@ -669,6 +669,7 @@
                 }
             } else if (eventType === 'done') {
                 // 完成，显示 token 统计
+                console.log('收到 done 事件，data:', data); // 调试日志
                 updateAssistantMessage(assistantMessageDiv, data.fullAnswer, false, true);
                 // 隐藏 loading（确保一定隐藏）
                 hideLoading(assistantMessageDiv);
@@ -678,7 +679,10 @@
                 hasReceivedContent = false;
                 loadingStage = 0;
                 if (data.tokenUsage) {
+                    console.log('Token 使用情况:', data.tokenUsage); // 调试日志
                     showTokenStats(data.tokenUsage);
+                } else {
+                    console.warn('没有收到 tokenUsage 数据'); // 警告日志
                 }
             } else if (eventType === 'error') {
                 // 错误
