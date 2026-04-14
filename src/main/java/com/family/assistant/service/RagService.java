@@ -6,32 +6,27 @@ import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.DocumentSplitter;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.embedding.Embedding;
-import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.StreamingResponseHandler;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.output.Response;
 import dev.langchain4j.model.output.TokenUsage;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.service.AiServices;
-import dev.langchain4j.service.TokenStream;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingSearchResult;
 import dev.langchain4j.store.embedding.EmbeddingStore;
-import dev.langchain4j.store.embedding.filter.MetadataFilterBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 /**
@@ -211,23 +206,39 @@ public class RagService {
             // 记录用户提问日志
             log.info("用户提问（流式）: {}", question);
 
+            // 获取对话历史
+            List<dev.langchain4j.data.message.ChatMessage> messages = chatMemory.messages();
+            
+            // 添加用户消息
+            messages.add(new dev.langchain4j.data.message.UserMessage(question));
+
             // 使用流式模型进行对话
-            streamingChatLanguageModel.generate(
-                    chatMemory.messages(),
-                    question
-            ).onNext(token -> {
-                // 每次生成一个 token 时调用回调
-                onNext.accept(token);
-            }).onComplete(response -> {
-                // 完成时记录 token 使用统计
-                TokenUsage tokenUsage = response.tokenUsage();
-                log.info("AI 回答完成（流式），Token 使用: {}", tokenUsage);
-                onComplete.accept(tokenUsage);
-            }).onError(error -> {
-                // 错误时记录日志并回调
-                log.error("流式生成出错", error);
-                onError.accept(error);
-            }).start();
+            streamingChatLanguageModel.generate(messages, new StreamingResponseHandler<dev.langchain4j.data.message.AiMessage>() {
+                @Override
+                public void onNext(String token) {
+                    onNext.accept(token);
+                }
+
+                @Override
+                public void onComplete(Response<dev.langchain4j.data.message.AiMessage> response) {
+                    TokenUsage tokenUsage = response.tokenUsage();
+                    log.info("AI 回答完成（流式），Token 使用: {}", tokenUsage);
+                    
+                    // 将 AI 回复添加到对话历史中
+                    if (response.content() != null) {
+                        chatMemory.add(new dev.langchain4j.data.message.UserMessage(question));
+                        chatMemory.add(response.content());
+                    }
+                    
+                    onComplete.accept(tokenUsage);
+                }
+
+                @Override
+                public void onError(Throwable error) {
+                    log.error("流式生成出错", error);
+                    onError.accept(error);
+                }
+            });
         } catch (Exception e) {
             log.error("流式查询出错", e);
             onError.accept(e);
