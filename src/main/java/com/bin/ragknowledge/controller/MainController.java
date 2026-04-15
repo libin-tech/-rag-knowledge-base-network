@@ -1,9 +1,6 @@
 package com.bin.ragknowledge.controller;
 
-import com.bin.ragknowledge.dto.FeishuMessage;
-import com.bin.ragknowledge.dto.FeishuResponse;
 import com.bin.ragknowledge.service.DocumentService;
-import com.bin.ragknowledge.service.FeishuService;
 import com.bin.ragknowledge.service.RagService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,14 +8,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * 主控制器
- * 提供核心的 RESTful API 接口，包括文档上传、批量上传、智能问答、飞书 Webhook 集成等功能。
- * 该控制器是系统的主要 API 入口，支持外部系统（如飞书）和应用客户端的调用。
+ * 提供核心的 RESTful API 接口，包括文档上传、批量上传、智能问答等功能。
+ * 该控制器是系统的主要 API 入口，支持应用客户端的调用。
  */
 @Slf4j
 @RestController
@@ -30,8 +26,6 @@ public class MainController {
     private final DocumentService documentService;
     /** RAG 服务，用于将文档添加到向量数据库和执行智能问答 */
     private final RagService ragService;
-    /** 飞书服务，用于处理飞书消息和事件回调 */
-    private final FeishuService feishuService;
 
     /**
      * 上传 PDF 文档
@@ -150,71 +144,6 @@ public class MainController {
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
                     "message", "问答失败: " + e.getMessage()
-            ));
-        }
-    }
-
-    /**
-     * 飞书 Webhook 接口 - 接收消息
-     * 处理来自飞书机器人的 Webhook 消息，实现与飞书用户的交互
-     *
-     * @param feishuMessage 飞书消息对象，包含消息内容、发送者信息等
-     * @return 处理结果的响应体，由 FeishuService 生成
-     */
-    @PostMapping("/feishu/webhook")
-    public ResponseEntity<?> feishuWebhook(@RequestBody FeishuMessage feishuMessage) {
-        try {
-            // 调用飞书服务处理消息
-            Map<String, Object> response = feishuService.handleMessage(feishuMessage);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            // 记录异常日志并返回错误响应
-            log.error("处理飞书 Webhook 失败", e);
-            return ResponseEntity.internalServerError().body(Map.of(
-                    "code", 1,
-                    "msg", "处理失败: " + e.getMessage()
-            ));
-        }
-    }
-
-    /**
-     * 飞书事件回调 URL 验证
-     * 处理飞书开放平台的事件回调，包括 URL 验证和实际事件处理
-     * 飞书在配置事件订阅时会发送此请求验证 URL 的有效性
-     *
-     * @param requestBody 请求体，包含事件类型和挑战码等信息
-     * @return 验证响应或事件处理结果
-     */
-    @PostMapping("/feishu/event")
-    public ResponseEntity<?> feishuEventCallback(@RequestBody Map<String, Object> requestBody) {
-        try {
-            // 获取事件类型
-            String type = (String) requestBody.get("type");
-
-            // URL 验证：飞书配置回调地址时会发送 url_verification 类型事件
-            // 需要原样返回 challenge 字段以完成验证
-            if ("url_verification".equals(type)) {
-                String challenge = (String) requestBody.get("challenge");
-                Map<String, String> response = new HashMap<>();
-                response.put("challenge", challenge);
-                return ResponseEntity.ok(response);
-            }
-
-            // 处理实际的事件回调
-            if ("event_callback".equals(type)) {
-                // 解析并处理事件
-                log.info("收到飞书事件回调: {}", requestBody);
-                return ResponseEntity.ok(Map.of("code", 0));
-            }
-
-            // 其他类型事件，返回成功响应
-            return ResponseEntity.ok(Map.of("code", 0));
-        } catch (Exception e) {
-            // 记录异常日志并返回错误响应
-            log.error("处理飞书事件回调失败", e);
-            return ResponseEntity.internalServerError().body(Map.of(
-                    "code", 1,
-                    "msg", "处理失败: " + e.getMessage()
             ));
         }
     }

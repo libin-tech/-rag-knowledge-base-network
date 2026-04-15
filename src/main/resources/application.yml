@@ -59,17 +59,11 @@ rag:
     max-results: 5
     min-score: 0.7
 
-# 飞书配置
-feishu:
-  app-id: ${FEISHU_APP_ID:cli_a9562cac4c221cce}
-  app-secret: ${FEISHU_APP_SECRET:KtBj3prNUr353WrxDyJWkbk3ObrjBtYk}
-  verification-token: ${FEISHU_VERIFICATION_TOKEN:1ASmhjUA8vmMt0knixbh0dUlWxhGAmcs}
-  encrypt-key: ${FEISHU_ENCRYPT_KEY:Dmzs3TqmgNkXrdfwOMOBNcJauHn6fYqC}
 
 # 日志配置
 logging:
   level:
-    com.family.assistant: INFO
+    com.bin.ragknowledge: INFO
     dev.langchain4j: DEBUG
 
 # 登录配置
