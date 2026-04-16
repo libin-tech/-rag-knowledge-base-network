@@ -1,6 +1,6 @@
 # RAG知识库系统
 
-这是一个基于LangChain4j的RAG（Retrieval-Augmented Generation）知识库问答系统。
+这是一个基于LangChain4j的RAG（Retrieval-Augmented Generation）知识库问答系统。集成飞书机器人，支持DashScope和Ollama的模型。
 
 ## 功能特性
 
@@ -8,6 +8,7 @@
 - 支持多种大语言模型（DashScope和Ollama）
 - 向量数据库支持（Milvus）
 - Web界面管理
+- 飞书机器人集成
 
 ## 技术栈
 
@@ -15,6 +16,7 @@
 - Java 21
 - LangChain4j
 - Milvus向量数据库
+- Feishu机器人
 
 
 ## 开发指南

@@ -59,6 +59,13 @@ rag:
     max-results: 5
     min-score: 0.7
 
+
+feishu:
+  app:
+    app-id: ${FEI_SHU_APP_ID:cli_a96aee578c78dcc5}
+    app-secret: ${FEI_SHU_APP_SECRET:H0KmB1X2ru8AwMzz8imi1gdl2bcvDW2Q}
+
+
 # 日志配置
 logging:
   level:
