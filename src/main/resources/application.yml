@@ -16,7 +16,7 @@ llm:
 
   # 阿里云 DashScope 配置
   dashscope:
-    api-key: ${DASHSCOPE_API_KEY:sk-aac8392cbe8a42e787ae03660c0311ae}
+    api-key: ${DASHSCOPE_API_KEY:sk-xxxxxx}
     model-name: qwen-plus
 
   # Ollama 本地配置
@@ -31,7 +31,7 @@ embedding:
   mode: ${LLM_MODE:ollama}
 
   dashscope:
-    api-key: ${DASHSCOPE_API_KEY:sk-aac8392cbe8a42e787ae03660c0311ae}
+    api-key: ${DASHSCOPE_API_KEY:sk-XXXXX}
     model-name: text-embedding-v3
 
   ollama:
@@ -62,8 +62,8 @@ rag:
 
 feishu:
   app:
-    app-id: ${FEI_SHU_APP_ID:cli_a96aee578c78dcc5}
-    app-secret: ${FEI_SHU_APP_SECRET:H0KmB1X2ru8AwMzz8imi1gdl2bcvDW2Q}
+    app-id: ${FEI_SHU_APP_ID:XXXXX}
+    app-secret: ${FEI_SHU_APP_SECRET:XXXXX}
 
 
 # 日志配置
