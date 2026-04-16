@@ -30,3 +30,16 @@
    - Windows: 运行 `stop.bat`
    - macOS/Linux: 运行 `./stop.sh` (需要先赋予执行权限: `chmod +x stop.sh`)
 
+
+## Web效果图
+![登录页](images/login_img.png)
+
+![文档上传页](images/upload_img.png)
+
+![文档管理页](images/doc_mng.png)
+
+![问题回答页](images/question_img.png)
+
+
+## 飞书机器人效果图
+![飞书机器人效果图](images/feishu_img.png)
