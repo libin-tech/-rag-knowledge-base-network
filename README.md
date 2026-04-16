@@ -1,5 +1,7 @@
 # RAG知识库系统
 
+[English](README_en.md) | 中文
+
 这是一个基于LangChain4j的RAG（Retrieval-Augmented Generation）知识库问答系统。集成飞书机器人，支持DashScope和Ollama的模型。
 
 ## 功能特性
