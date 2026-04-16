@@ -12,7 +12,6 @@ import org.springframework.scheduling.annotation.EnableAsync;
  * 1. PDF 文档上传和解析
  * 2. 文档向量化存储到 Milvus
  * 3. 基于 RAG 的智能问答
- * 4. 飞书机器人集成
  *
  * @author Family Assistant Team
  * @version 1.0.0

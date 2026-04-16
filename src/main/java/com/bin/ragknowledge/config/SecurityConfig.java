@@ -72,9 +72,6 @@ public class SecurityConfig {
                 // 允许公开访问登录页及相关静态资源（CSS、JS、图片等）
                 // 这些资源不需要用户认证即可访问
                 .requestMatchers("/login", "/css/**", "/js/**", "/images/**").permitAll()
-                // 允许公开访问飞书 Webhook 接口
-                // 飞书服务器需要调用此接口推送消息，因此必须公开访问
-                .requestMatchers("/api/feishu/**").permitAll()
                 // 允许公开访问健康检查接口
                 // 用于监控系统检查服务是否正常运行，不需要认证
                 .requestMatchers("/api/health").permitAll()
