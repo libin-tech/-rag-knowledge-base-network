@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+    RAG企业知识库问答系统 - Maven项目配置文件
+    定义项目依赖、构建配置和插件设置
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- Spring Boot父项目，提供依赖管理和默认配置 -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -12,23 +17,39 @@
         <relativePath/>
     </parent>
 
+    <!-- 项目基本信息：RAG企业知识库问答系统 -->
     <groupId>com.rag</groupId>
     <artifactId>rag-knowledge-base</artifactId>
     <version>1.0.0</version>
     <name>rag-knowledge-base</name>
     <description>RAG企业知识库问答系统</description>
 
+    <!-- 依赖版本管理属性 -->
     <properties>
+        <!-- Java版本：使用Java 21 -->
         <java.version>21</java.version>
+        <!-- LangChain4j框架版本：用于LLM应用开发 -->
         <langchain4j.version>0.36.2</langchain4j.version>
+        <!-- Hutool工具库版本 -->
         <hutool.version>5.8.38</hutool.version>
+        <!-- 飞书SDK版本 -->
         <oapi-sdk.version>2.4.21</oapi-sdk.version>
+        <!-- FastJSON2版本：高性能JSON处理 -->
         <fastjson2.version>2.0.61</fastjson2.version>
+        <!-- Protocol Buffers版本：序列化协议 -->
         <protobuf.version>3.25.5</protobuf.version>
+        <!-- 钉钉Stream版本：钉钉消息流处理 -->
+        <dingtalk-stream.version>1.3.12</dingtalk-stream.version>
+        <!-- 钉钉SDK版本：阿里云钉钉API -->
+        <aliyun.dingtalk.version>2.0.76</aliyun.dingtalk.version>
     </properties>
+
+    <!-- ... existing code ... -->
 
     <dependencies>
         <!-- ==================== Spring Boot 核心依赖 ==================== -->
+
+        <!-- ... existing code ... -->
 
         <!-- Spring Boot Web：提供 RESTful API 和 Web 功能 -->
         <dependency>
@@ -159,14 +180,34 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- 钉钉Stream SDK：支持钉钉卡片消息和事件订阅 -->
+        <dependency>
+            <groupId>com.dingtalk.open</groupId>
+            <artifactId>dingtalk-stream</artifactId>
+            <version>${dingtalk-stream.version}</version>
+        </dependency>
+
+        <!-- 阿里云钉钉SDK：提供钉钉API调用能力 -->
+        <dependency>
+            <groupId>com.aliyun</groupId>
+            <artifactId>dingtalk</artifactId>
+            <version>${aliyun.dingtalk.version}</version>
+        </dependency>
+
+
+
     </dependencies>
 
+    <!-- 构建配置：定义编译和打包插件 -->
     <build>
         <plugins>
+            <!-- Spring Boot Maven插件：支持可执行JAR包打包 -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
+                    <!-- 排除Lombok依赖，避免打包到最终产物 -->
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
@@ -175,11 +216,13 @@
                     </excludes>
                 </configuration>
             </plugin>
+            <!-- Maven编译器插件：指定Java编译版本 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
+                    <!-- 源代码和目标代码均使用Java 21 -->
                     <source>21</source>
                     <target>21</target>
                 </configuration>

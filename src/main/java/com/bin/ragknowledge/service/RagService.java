@@ -1,5 +1,6 @@
 package com.bin.ragknowledge.service;
 
+import cn.hutool.core.date.StopWatch;
 import cn.hutool.core.util.IdUtil;
 import com.bin.ragknowledge.config.RagProperties;
 import dev.langchain4j.data.document.Document;
@@ -11,9 +12,7 @@ import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
-import dev.langchain4j.model.StreamingResponseHandler;
 import dev.langchain4j.model.embedding.EmbeddingModel;
-import dev.langchain4j.model.output.Response;
 import dev.langchain4j.model.output.TokenUsage;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
@@ -167,8 +166,14 @@ public class RagService {
 
         // 记录用户提问日志
         log.info("用户提问: {}", question);
+        log.info("正在增强检索，请耐心等待...");
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start("rag-query");
         // 调用 AI 助手进行对话，系统会自动完成检索-增强-生成的完整流程
         String answer = assistant.chat(question);
+        stopWatch.stop();
+        long costTime = stopWatch.getTotalTimeMillis();
+        log.info("RAG 检索增强与回答耗时: {} ms", costTime);
         // 记录 AI 回答日志
         log.info("AI 回答: {}", answer);
 

@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: rag-knowledge-base
+  config:
+    # 本地启动时可在项目根目录创建 application-local.yml 覆盖默认配置
+    # 文件不存在也不会报错
+    import: optional:file:./application-local.yml
   servlet:
     multipart:
       max-file-size: 50MB
@@ -16,7 +20,7 @@ llm:
 
   # 阿里云 DashScope 配置
   dashscope:
-    api-key: ${DASHSCOPE_API_KEY:sk-xxxxxx}
+    api-key: ${DASHSCOPE_API_KEY:}
     model-name: qwen-plus
 
   # Ollama 本地配置
@@ -31,7 +35,7 @@ embedding:
   mode: ${LLM_MODE:ollama}
 
   dashscope:
-    api-key: ${DASHSCOPE_API_KEY:sk-XXXXX}
+    api-key: ${DASHSCOPE_API_KEY:}
     model-name: text-embedding-v3
 
   ollama:
@@ -62,8 +66,16 @@ rag:
 
 feishu:
   app:
-    app-id: ${FEI_SHU_APP_ID:XXXXX}
-    app-secret: ${FEI_SHU_APP_SECRET:XXXXX}
+    app-id: ${FEI_SHU_APP_ID:}
+    app-secret: ${FEI_SHU_APP_SECRET:}
+
+# 钉钉应用配置
+# 用于集成钉钉开放平台API，提供应用身份认证和授权功能
+dingtalk:
+  app:
+    app-key: ${DINGTALK_APP_KEY:}
+    app-secret: ${DINGTALK_APP_SECRET:}
+
 
 
 # 日志配置
@@ -78,4 +90,4 @@ auth:
   # 默认管理员用户名
   admin-username: ${ADMIN_USERNAME:admin}
   # 默认管理员密码
-  admin-password: ${ADMIN_PASSWORD:admin123}
+  admin-password: ${ADMIN_PASSWORD:admin@2026}

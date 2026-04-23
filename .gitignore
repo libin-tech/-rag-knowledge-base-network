@@ -41,6 +41,7 @@ Thumbs.db
 
 # Environment
 .env
+application-local.yml
 
 # Docker
 *.pid
