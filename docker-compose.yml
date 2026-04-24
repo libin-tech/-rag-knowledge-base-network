@@ -1,6 +1,24 @@
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:16
+    container_name: rag-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: rag_knowledge
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d rag_knowledge" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
   # Milvus 向量数据库
   milvus-standalone:
     image: milvusdb/milvus:v2.4.15
@@ -75,6 +93,13 @@ services:
       # Milvus 配置
       MILVUS_HOST: milvus-standalone
       MILVUS_PORT: 19530
+      POSTGRES_URL: jdbc:postgresql://postgres:5432/rag_knowledge
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: postgres
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET_NAME: rag-documents
       
       # LLM 配置 - 根据需要切换
       # 使用 DashScope (云端)
@@ -93,6 +118,8 @@ services:
       # JVM 参数
       JAVA_OPTS: -Xms512m -Xmx2g
     depends_on:
+      postgres:
+        condition: service_healthy
       milvus-standalone:
         condition: service_healthy
     volumes:
@@ -102,6 +129,7 @@ volumes:
   milvus-data:
   etcd-data:
   minio-data:
+  postgres-data:
 
 networks:
   default:

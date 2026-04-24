@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * 主控制器
@@ -46,7 +47,7 @@ public class MainController {
             }
 
             // 校验文件类型，仅支持 PDF 格式
-            if (!file.getOriginalFilename().endsWith(".pdf")) {
+            if (!Objects.requireNonNull(file.getOriginalFilename()).endsWith(".pdf")) {
                 return ResponseEntity.badRequest().body(Map.of(
                         "success", false,
                         "message", "只支持 PDF 文件"

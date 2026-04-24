@@ -1,23 +1,13 @@
 package com.bin.ragknowledge;
 
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableAsync;
 
-/**
- * RAG企业知识库问答系统应用程序主启动类
- *
- * 这是一个基于 Spring Boot 和 LangChain4j 的 RAG (检索增强生成) 系统
- * 主要功能：
- * 1. PDF 文档上传和解析
- * 2. 文档向量化存储到 Milvus
- * 3. 基于 RAG 的智能问答
- *
- * @author Family Assistant Team
- * @version 1.0.0
- */
 @SpringBootApplication
 @EnableAsync
+@MapperScan("com.bin.ragknowledge.repository")
 public class RagKnowledgeBaseApplication {
 
     /**

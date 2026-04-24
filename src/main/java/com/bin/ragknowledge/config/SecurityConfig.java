@@ -9,6 +9,8 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -65,19 +67,18 @@ public class SecurityConfig {
             // 禁用 CSRF（跨站请求伪造）保护
             // 适用于 API 服务或不使用 Cookie 认证的场景
             // 如果使用 Session 认证，建议启用 CSRF 保护
-            .csrf(csrf -> csrf.disable())
+            .csrf(AbstractHttpConfigurer::disable)
 
             // 配置 HTTP 请求的授权规则
             .authorizeHttpRequests(auth -> auth
-                // 允许公开访问登录页及相关静态资源（CSS、JS、图片等）
-                // 这些资源不需要用户认证即可访问
-                .requestMatchers("/login", "/css/**", "/js/**", "/images/**").permitAll()
-                // 允许公开访问健康检查接口
-                // 用于监控系统检查服务是否正常运行，不需要认证
+                .requestMatchers("/login", "/css/**", "/js/**", "/images/**", "/static/**").permitAll()
                 .requestMatchers("/api/health").permitAll()
-                // 除了上述公开的接口外，其他所有请求都需要用户认证
-                // 未认证的用户会被重定向到登录页
+                .requestMatchers("/admin/**").authenticated()
                 .anyRequest().authenticated()
+            )
+            // 配置帧选项，允许同源页面在 iframe 中显示
+            .headers(headers -> headers
+                    .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
             )
 
             // 配置表单登录功能

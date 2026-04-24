@@ -1,26 +1,35 @@
 package com.bin.ragknowledge.controller;
 
+import com.bin.ragknowledge.config.AuthProperties;
+import com.bin.ragknowledge.repository.entity.DocumentMetadataEntity;
+import com.bin.ragknowledge.service.DocumentMetadataService;
 import com.bin.ragknowledge.service.DocumentService;
+import com.bin.ragknowledge.service.ObjectStorageService;
 import com.bin.ragknowledge.service.RagService;
-import lombok.Data;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 管理后台控制器
@@ -36,49 +45,15 @@ public class AdminController {
 
     /** 文档服务，用于解析 PDF 文档 */
     private final DocumentService documentService;
-    /** RAG 服务，用于将文档添加到向量数据库和执行智能问答 */
     private final RagService ragService;
 
-    // 简单的文档记录存储 (实际项目应使用数据库)
-    /** 文档记录映射表，使用 ConcurrentHashMap 保证线程安全，key 为文档 ID，value 为文档记录 */
-    private static final Map<String, DocumentRecord> documentRecords = new ConcurrentHashMap<>();
+    private final ObjectStorageService objectStorageService;
 
-    /**
-     * 文档记录内部类
-     * 用于存储上传文档的基本信息，包括文件名、大小、上传时间、分段数等。
-     */
-    @Data
-    private static class DocumentRecord {
-        /** 文档唯一标识 */
-        private String id;
-        /** 文件名称 */
-        private String filename;
-        /** 文件大小（字节） */
-        private long size;
-        /** 上传时间，格式为 yyyy-MM-dd HH:mm:ss */
-        private String uploadTime;
-        /** 文档分段数量，用于 RAG 检索 */
-        private int segments;
-        /** 文档状态 */
-        private String status;
+    private final DocumentMetadataService documentMetadataService;
 
-        /**
-         * 构造文档记录
-         *
-         * @param id 文档唯一标识
-         * @param filename 文件名称
-         * @param size 文件大小（字节）
-         */
-        public DocumentRecord(String id, String filename, long size) {
-            this.id = id;
-            this.filename = filename;
-            this.size = size;
-            // 初始化上传时间为当前时间
-            this.uploadTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            this.segments = 0;
-            this.status = "已上传";
-        }
-    }
+    private final AuthProperties authProperties;
+
+    private final ObjectMapper objectMapper;
 
     /**
      * 管理后台首页
@@ -122,8 +97,6 @@ public class AdminController {
      */
     @GetMapping("/documents")
     public String documentsPage(Model model) {
-        // 将所有文档记录添加到模型中，供前端页面渲染使用
-        model.addAttribute("documents", documentRecords.values());
         return "admin/documents";
     }
 
@@ -138,49 +111,8 @@ public class AdminController {
     @ResponseBody
     public ResponseEntity<Map<String, Object>> uploadPdf(@RequestParam("file") MultipartFile file) {
         try {
-            // 校验文件是否为空
-            if (file.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "文件不能为空"
-                ));
-            }
-
-            // 校验文件类型，仅支持 PDF 格式
-            if (!file.getOriginalFilename().endsWith(".pdf")) {
-                return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "只支持 PDF 文件"
-                ));
-            }
-
-            // 使用 DocumentService 解析 PDF 文档内容
-            var document = documentService.parsePdf(file);
-
-            // 将解析后的文档添加到向量数据库中，用于后续的相似度检索
-            ragService.addDocument(document);
-
-            // 生成唯一 ID 并记录文档信息到内存存储中
-            String docId = UUID.randomUUID().toString();
-            DocumentRecord record = new DocumentRecord(
-                    docId,
-                    file.getOriginalFilename(),
-                    file.getSize()
-            );
-            documentRecords.put(docId, record);
-
-            // 返回成功响应，包含文档的详细信息
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "文档上传并处理成功",
-                    "data", Map.of(
-                            "id", docId,
-                            "filename", file.getOriginalFilename(),
-                            "size", formatFileSize(file.getSize())
-                    )
-            ));
+            return handleSingleUpload(file);
         } catch (Exception e) {
-            // 记录异常日志并返回错误响应
             log.error("上传 PDF 失败", e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
@@ -201,7 +133,6 @@ public class AdminController {
     public ResponseEntity<Map<String, Object>> uploadMultiplePdfs(
             @RequestParam("files") List<MultipartFile> files) {
         try {
-            // 校验文件列表是否为空
             if (files == null || files.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
                         "success", false,
@@ -209,34 +140,24 @@ public class AdminController {
                 ));
             }
 
-            int successCount = 0;  // 成功处理的文件数量
-            int failCount = 0;     // 失败的文件数量
-            List<String> errors = new ArrayList<>();  // 收集每个文件的错误信息
-
-            // 遍历处理每个上传的文件
+            int successCount = 0;
+            int failCount = 0;
+            List<String> errors = new ArrayList<>();
             for (MultipartFile file : files) {
                 try {
-                    // 解析 PDF 并添加到向量数据库
-                    var document = documentService.parsePdf(file);
-                    ragService.addDocument(document);
-
-                    // 生成唯一 ID 并记录文档信息
-                    String docId = UUID.randomUUID().toString();
-                    DocumentRecord record = new DocumentRecord(
-                            docId,
-                            file.getOriginalFilename(),
-                            file.getSize()
-                    );
-                    documentRecords.put(docId, record);
-                    successCount++;  // 成功计数
+                    ResponseEntity<Map<String, Object>> result = handleSingleUpload(file);
+                    if (result.getStatusCode().is2xxSuccessful()) {
+                        successCount++;
+                    } else {
+                        failCount++;
+                        errors.add(file.getOriginalFilename() + ": 上传失败");
+                    }
                 } catch (Exception e) {
-                    // 单个文件处理失败不影响其他文件，记录错误信息
                     failCount++;
                     errors.add(file.getOriginalFilename() + ": " + e.getMessage());
                 }
             }
 
-            // 返回批量处理结果，包含成功/失败数量和错误详情
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "message", String.format("成功: %d, 失败: %d", successCount, failCount),
@@ -247,7 +168,6 @@ public class AdminController {
                     )
             ));
         } catch (Exception e) {
-            // 全局异常处理
             log.error("批量上传 PDF 失败", e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
@@ -267,9 +187,7 @@ public class AdminController {
     @ResponseBody
     public ResponseEntity<Map<String, Object>> query(@RequestBody Map<String, String> request) {
         try {
-            // 从请求体中获取用户问题
             String question = request.get("question");
-            // 校验问题是否为空
             if (question == null || question.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
                         "success", false,
@@ -277,14 +195,12 @@ public class AdminController {
                 ));
             }
 
-            // 调用 RAG 服务进行智能问答
             String answer = ragService.query(question);
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "answer", answer
             ));
         } catch (Exception e) {
-            // 记录异常日志并返回错误响应
             log.error("问答失败", e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
@@ -304,13 +220,9 @@ public class AdminController {
     @PostMapping(value = "/api/query/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @ResponseBody
     public SseEmitter queryStream(@RequestBody Map<String, String> request) {
-        // 创建 SSE 发射器，设置超时时间为 1 分钟
         SseEmitter emitter = new SseEmitter(60 * 1000L);
-        
-        // 从请求体中获取用户问题
         String question = request.get("question");
-        
-        // 校验问题是否为空
+
         if (question == null || question.isEmpty()) {
             try {
                 emitter.send(SseEmitter.event()
@@ -323,13 +235,10 @@ public class AdminController {
             return emitter;
         }
 
-        // 构建完整回答
         StringBuilder fullAnswer = new StringBuilder();
-        
-        // 调用流式查询服务
+
         ragService.queryStream(
                 question,
-                // onNext: 每次生成新内容时
                 (text) -> {
                     try {
                         fullAnswer.append(text);
@@ -344,7 +253,6 @@ public class AdminController {
                         emitter.completeWithError(e);
                     }
                 },
-                // onComplete: 完成时
                 (tokenUsage) -> {
                     try {
                         emitter.send(SseEmitter.event()
@@ -363,7 +271,6 @@ public class AdminController {
                         emitter.completeWithError(e);
                     }
                 },
-                // onError: 错误时
                 (error) -> {
                     try {
                         emitter.send(SseEmitter.event()
@@ -388,10 +295,25 @@ public class AdminController {
      */
     @GetMapping("/api/documents")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> getDocuments() {
+    public ResponseEntity<Map<String, Object>> getDocuments(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        int currentPage = Math.max(page, 1);
+        int pageSize = Math.min(Math.max(size, 1), 100);
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<DocumentMetadataEntity> resultPage =
+                documentMetadataService.page(currentPage, pageSize);
+        List<Map<String, Object>> records = resultPage.getRecords().stream()
+                .map(this::toDocumentResponse)
+                .toList();
         return ResponseEntity.ok(Map.of(
                 "success", true,
-                "data", documentRecords.values()  // 返回所有文档记录的集合
+                "data", records,
+                "pagination", Map.of(
+                        "page", currentPage,
+                        "size", pageSize,
+                        "totalPages", resultPage.getPages(),
+                        "totalElements", resultPage.getTotal()
+                )
         ));
     }
 
@@ -404,13 +326,128 @@ public class AdminController {
      */
     @DeleteMapping("/api/document/{id}")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> deleteDocument(@PathVariable String id) {
-        // 从内存记录映射表中移除指定文档
-        documentRecords.remove(id);
+    @Transactional(rollbackFor = Exception.class)
+    public ResponseEntity<Map<String, Object>> deleteDocument(
+            @PathVariable String id,
+            @RequestBody DeleteDocumentRequest request) {
+        if (request == null || request.getPassword() == null || request.getPassword().isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "请输入删除确认密码"
+            ));
+        }
+        if (!authProperties.getAdminPassword().equals(request.getPassword())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                    "success", false,
+                    "message", "删除密码校验失败"
+            ));
+        }
+        DocumentMetadataEntity entity = documentMetadataService.getById(id);
+        if (entity == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                    "success", false,
+                    "message", "文档不存在"
+            ));
+        }
+        try {
+            List<String> vectorIds = objectMapper.readValue(entity.getVectorIds(), new TypeReference<>() {
+            });
+            ragService.deleteDocumentVectors(vectorIds);
+            objectStorageService.deleteFile(entity.getObjectKey());
+            documentMetadataService.deleteById(id);
+        } catch (Exception e) {
+            log.error("删除文档失败, id: {}", id, e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "success", false,
+                    "message", "删除失败: " + e.getMessage()
+            ));
+        }
         return ResponseEntity.ok(Map.of(
                 "success", true,
-                "message", "文档已删除"
+                "message", "文档已删除（pgsql、minio、向量库）"
         ));
+    }
+
+    @GetMapping(value = "/api/document/{id}/preview", produces = MediaType.APPLICATION_PDF_VALUE)
+    @ResponseBody
+    public ResponseEntity<byte[]> previewDocument(@PathVariable String id) {
+        DocumentMetadataEntity entity = documentMetadataService.getById(id);
+        if (entity == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        try (InputStream inputStream = objectStorageService.getFileStream(entity.getObjectKey())) {
+            byte[] content = inputStream.readAllBytes();
+            String contentType = objectStorageService.getContentType(entity.getObjectKey());
+            String encodedFilename = java.net.URLEncoder.encode(entity.getFilename(), StandardCharsets.UTF_8)
+                    .replaceAll("\\+", "%20");
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType == null ? MediaType.APPLICATION_PDF_VALUE : contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename*=UTF-8''" + encodedFilename)
+                    .body(content);
+        } catch (Exception e) {
+            log.error("预览文档失败, id: {}", id, e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    private ResponseEntity<Map<String, Object>> handleSingleUpload(MultipartFile file) throws Exception {
+        if (file == null || file.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "文件不能为空"
+            ));
+        }
+        String filename = file.getOriginalFilename();
+        if (filename == null || !filename.toLowerCase().endsWith(".pdf")) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "只支持 PDF 文件"
+            ));
+        }
+        var document = documentService.parsePdf(file);
+        RagService.DocumentVectorResult vectorResult = ragService.addDocument(document);
+
+        String documentId = UUID.randomUUID().toString();
+        String objectKey = "documents/" + documentId + "/" + filename;
+        objectStorageService.uploadFile(objectKey, file);
+
+        DocumentMetadataEntity entity = new DocumentMetadataEntity();
+        entity.setId(documentId);
+        entity.setFilename(filename);
+        entity.setFileSize(file.getSize());
+        entity.setContentType(file.getContentType() == null ? MediaType.APPLICATION_PDF_VALUE : file.getContentType());
+        entity.setObjectKey(objectKey);
+        entity.setVectorDocId(vectorResult.vectorDocId());
+        entity.setSegmentCount(vectorResult.segmentCount());
+        entity.setVectorIds(objectMapper.writeValueAsString(vectorResult.vectorIds()));
+        entity.setUploadTime(LocalDateTime.now());
+        documentMetadataService.save(entity);
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "文档上传并处理成功",
+                "data", Map.of(
+                        "id", documentId,
+                        "filename", filename,
+                        "size", formatFileSize(file.getSize())
+                )
+        ));
+    }
+
+    private Map<String, Object> toDocumentResponse(DocumentMetadataEntity entity) {
+        return Map.of(
+                "id", entity.getId(),
+                "filename", entity.getFilename(),
+                "size", formatFileSize(entity.getFileSize()),
+                "uploadTime", entity.getUploadTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                "status", "已上传",
+                "segmentCount", entity.getSegmentCount()
+        );
+    }
+
+    @lombok.Data
+    private static class DeleteDocumentRequest {
+        private String password;
     }
 
     /**

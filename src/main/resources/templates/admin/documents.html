@@ -260,6 +260,47 @@
                 <div id="documentList"></div>
             </div>
         </div>
+        <div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">PDF 预览</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body" style="height: 80vh;">
+                        <iframe id="previewFrame" style="width: 100%; height: 100%; border: none;"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">删除确认</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p id="deleteTargetName" class="mb-3 text-danger"></p>
+                        <div class="mb-3">
+                            <label class="form-label">请输入管理员密码确认删除</label>
+                            <input id="deletePassword" type="password" class="form-control" placeholder="请输入密码">
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="deleteConfirmCheck">
+                            <label class="form-check-label" for="deleteConfirmCheck">
+                                我确认将同时删除 pgsql、minio 与向量库数据
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-danger" onclick="confirmDelete()">确认删除</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="text-center text-muted mt-4" style="font-size: 0.8rem;">
             © 2026 xxx公司. All Rights Reserved.
         </div>
@@ -268,15 +309,21 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let documents = [];
+        let currentPage = 1;
+        let pageSize = 10;
+        let totalPages = 1;
+        let pendingDelete = null;
 
         // 加载文档列表
         async function loadDocuments() {
             try {
-                const response = await fetch('/admin/api/documents');
+                const response = await fetch(`/admin/api/documents?page=${currentPage}&size=${pageSize}`);
                 const result = await response.json();
                 
                 if (result.success) {
                     documents = result.data;
+                    totalPages = result.pagination.totalPages || 1;
+                    currentPage = result.pagination.page;
                     displayDocuments();
                     updateStats();
                 }
@@ -311,6 +358,7 @@
                                 <th><i class="bi bi-file-earmark-pdf"></i> 文件名</th>
                                 <th><i class="bi bi-hdd"></i> 大小</th>
                                 <th><i class="bi bi-clock"></i> 上传时间</th>
+                                <th><i class="bi bi-layers"></i> 分段数</th>
                                 <th><i class="bi bi-info-circle"></i> 状态</th>
                                 <th><i class="bi bi-gear"></i> 操作</th>
                             </tr>
@@ -324,9 +372,13 @@
                                     </td>
                                     <td>${doc.size}</td>
                                     <td>${doc.uploadTime}</td>
+                                    <td>${doc.segmentCount}</td>
                                     <td><span class="badge badge-success">${doc.status}</span></td>
                                     <td>
-                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteDocument('${doc.id}', '${doc.filename}')">
+                                        <button class="btn btn-sm btn-outline-primary" onclick="previewDocument('${doc.id}')">
+                                            <i class="bi bi-eye"></i> 预览
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="openDeleteModal('${doc.id}', '${doc.filename}')">
                                             <i class="bi bi-trash"></i> 删除
                                         </button>
                                     </td>
@@ -334,6 +386,13 @@
                             `).join('')}
                         </tbody>
                     </table>
+                </div>
+                <div class="d-flex justify-content-between align-items-center p-3">
+                    <div class="text-muted">第 ${currentPage} / ${totalPages} 页</div>
+                    <div>
+                        <button class="btn btn-sm btn-outline-secondary" ${currentPage <= 1 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})">上一页</button>
+                        <button class="btn btn-sm btn-outline-secondary" ${currentPage >= totalPages ? 'disabled' : ''} onclick="changePage(${currentPage + 1})">下一页</button>
+                    </div>
                 </div>
             `;
         }
@@ -346,30 +405,68 @@
             document.getElementById('totalSize').textContent = documents.length + ' 个文件';
         }
 
-        // 删除文档
-        async function deleteDocument(id, filename) {
-            if (!confirm(`确定要删除文档 "${filename}" 吗？`)) return;
+        function openDeleteModal(id, filename) {
+            pendingDelete = { id, filename };
+            document.getElementById('deleteTargetName').textContent = `将删除：${filename}`;
+            document.getElementById('deletePassword').value = '';
+            document.getElementById('deleteConfirmCheck').checked = false;
+            const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+            modal.show();
+        }
 
+        async function confirmDelete() {
+            if (!pendingDelete) {
+                return;
+            }
+            const password = document.getElementById('deletePassword').value;
+            const confirmed = document.getElementById('deleteConfirmCheck').checked;
+            if (!password) {
+                showAlert('warning', '请输入删除确认密码');
+                return;
+            }
+            if (!confirmed) {
+                showAlert('warning', '请先勾选删除确认');
+                return;
+            }
             try {
-                const response = await fetch(`/admin/api/document/${id}`, {
-                    method: 'DELETE'
+                const response = await fetch(`/admin/api/document/${pendingDelete.id}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
                 });
 
                 const result = await response.json();
                 
                 if (result.success) {
-                    documents = documents.filter(doc => doc.id !== id);
-                    displayDocuments();
-                    updateStats();
-                    showAlert('success', '文档已删除');
+                    bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal')).hide();
+                    showAlert('success', result.message);
+                    loadDocuments();
+                } else {
+                    showAlert('danger', result.message || '删除失败');
                 }
             } catch (error) {
                 showAlert('danger', '删除失败: ' + error.message);
             }
         }
 
+        function previewDocument(id) {
+            const frame = document.getElementById('previewFrame');
+            frame.src = `/admin/api/document/${id}/preview`;
+            const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+            modal.show();
+        }
+
+        function changePage(page) {
+            if (page < 1 || page > totalPages) {
+                return;
+            }
+            currentPage = page;
+            loadDocuments();
+        }
+
         // 刷新文档列表
         function refreshDocuments() {
+            currentPage = 1;
             loadDocuments();
         }
 

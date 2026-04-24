@@ -90,7 +90,7 @@ public class RagService {
      *
      * @param document 待入库的 LangChain4j Document 对象，包含文档内容和元数据
      */
-    public void addDocument(Document document) {
+    public DocumentVectorResult addDocument(Document document) {
         // 根据配置参数创建文档分割器
         // 使用递归分割策略，按配置的块大小和重叠度进行分割
         DocumentSplitter splitter = DocumentSplitters.recursive(
@@ -112,9 +112,10 @@ public class RagService {
         // 调用嵌入模型批量向量化所有文本片段
         List<Embedding> embeddings = embeddingModel.embedAll(segments).content();
         // 将向量和对应的文本片段一并写入向量数据库
-        embeddingStore.addAll(embeddings, segments);
+        List<String> vectorIds = embeddingStore.addAll(embeddings, segments);
 
         log.info("文档已添加到向量数据库, docId: {}", docId);
+        return new DocumentVectorResult(docId, segments.size(), vectorIds);
     }
 
     /**
@@ -131,6 +132,14 @@ public class RagService {
         for (Document document : documents) {
             addDocument(document);
         }
+    }
+
+    public void deleteDocumentVectors(List<String> vectorIds) {
+        if (vectorIds == null || vectorIds.isEmpty()) {
+            return;
+        }
+        embeddingStore.removeAll(vectorIds);
+        log.info("删除向量数据成功, 向量数: {}", vectorIds.size());
     }
 
     /**
@@ -331,5 +340,8 @@ public class RagService {
          * @return TokenStream 用于接收流式生成的内容
          */
         TokenStream chat(String userMessage);
+    }
+
+    public record DocumentVectorResult(String vectorDocId, int segmentCount, List<String> vectorIds) {
     }
 }
