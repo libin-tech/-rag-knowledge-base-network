@@ -101,6 +101,28 @@ public class AdminController {
     }
 
     /**
+     * 模型配置页面
+     * 用于配置 LLM 和 Embedding 模型参数
+     *
+     * @return 模型配置页面的视图名称
+     */
+    @GetMapping("/config")
+    public String configPage() {
+        return "admin/config";
+    }
+
+    /**
+     * 消息渠道管理页面
+     * 用于配置飞书、钉钉等消息渠道
+     *
+     * @return 消息渠道管理页面的视图名称
+     */
+    @GetMapping("/channel")
+    public String channelPage() {
+        return "admin/channel";
+    }
+
+    /**
      * 上传 PDF 文档 (API)
      * 接收单个 PDF 文件，解析后添加到向量数据库中，支持后续的 RAG 检索问答
      *

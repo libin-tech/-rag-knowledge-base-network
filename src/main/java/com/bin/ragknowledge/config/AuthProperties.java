@@ -21,7 +21,7 @@ public class AuthProperties {
 
     /**
      * 管理员密码
-     * 默认值: admin123
+     * 默认值: admin@2026
      */
-    private String adminPassword = "admin123";
+    private String adminPassword = "admin@2026";
 }

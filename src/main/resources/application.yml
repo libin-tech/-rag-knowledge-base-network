@@ -38,35 +38,6 @@ mybatis-plus:
       logic-delete-value: true
       logic-not-delete-value: false
 
-# LLM 配置 - 支持云端和本地切换
-llm:
-  # 模式选择: dashscope 或 ollama
-  mode: ollama
-
-  # 阿里云 DashScope 配置
-  dashscope:
-    api-key: ${DASHSCOPE_API_KEY:}
-    model-name: qwen-plus
-
-  # Ollama 本地配置
-  ollama:
-    base-url: ${OLLAMA_BASE_URL:http://127.0.0.1:11434}
-    model-name: qwen3
-    timeout: 60s
-
-# Embedding 模型配置
-embedding:
-  # Embedding 模式: dashscope 或 ollama
-  mode: ${LLM_MODE:ollama}
-
-  dashscope:
-    api-key: ${DASHSCOPE_API_KEY:}
-    model-name: text-embedding-v3
-
-  ollama:
-    base-url: ${OLLAMA_BASE_URL:http://127.0.0.1:11434}
-    model-name: qwen3-embedding
-    timeout: 60s
 
 # Milvus 向量数据库配置
 milvus:
@@ -89,19 +60,6 @@ rag:
     min-score: 0.7
 
 
-feishu:
-  app:
-    app-id: ${FEI_SHU_APP_ID:}
-    app-secret: ${FEI_SHU_APP_SECRET:}
-
-# 钉钉应用配置
-# 用于集成钉钉开放平台API，提供应用身份认证和授权功能
-dingtalk:
-  app:
-    app-key: ${DINGTALK_APP_KEY:}
-    app-secret: ${DINGTALK_APP_SECRET:}
-
-
 
 # 日志配置
 logging:
@@ -117,6 +75,7 @@ auth:
   # 默认管理员密码
   admin-password: ${ADMIN_PASSWORD:admin@2026}
 
+# 文件存储配置
 storage:
   minio:
     endpoint: ${MINIO_ENDPOINT:http://127.0.0.1:9000}

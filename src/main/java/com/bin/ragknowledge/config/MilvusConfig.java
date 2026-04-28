@@ -1,7 +1,6 @@
 package com.bin.ragknowledge.config;
 
 import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.milvus.MilvusEmbeddingStore;
 import io.milvus.common.clientenum.ConsistencyLevelEnum;
@@ -27,17 +26,12 @@ public class MilvusConfig {
      */
     private final MilvusProperties milvusProperties;
 
-    /**
-     * 注入嵌入模型
-     * 用于在存储和检索时自动进行文本与向量之间的转换
-     */
-    private final EmbeddingModel embeddingModel;
 
     /**
      * 创建向量存储 Bean
      * 配置并初始化 Milvus Embedding Store，连接到 Milvus 数据库
      * 该 Store 用于存储和检索 TextSegment（文本片段）的向量表示
-     *
+     * <p>
      * 配置项包括：
      * - 连接信息：主机地址、端口、用户名和密码
      * - 集合配置：集合名称和向量维度

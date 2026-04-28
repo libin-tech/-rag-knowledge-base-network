@@ -2,6 +2,8 @@ package com.bin.ragknowledge.service;
 
 import cn.hutool.core.date.StopWatch;
 import cn.hutool.core.util.IdUtil;
+import com.bin.ragknowledge.config.EmbeddingModelFactory;
+import com.bin.ragknowledge.config.ModelFactory;
 import com.bin.ragknowledge.config.RagProperties;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.DocumentSplitter;
@@ -37,7 +39,7 @@ import java.util.function.Consumer;
  * 检索相关文档片段，并将其作为上下文提供给大语言模型，从而生成准确的回答。
  * </p>
  *
- * <p>核心工作流程：</p>
+ * <p>核���工作流程：</p>
  * <ol>
  *   <li>文档入库：接收文档 -> 按策略分割为片段 -> 为片段生成向量 -> 存储到向量数据库</li>
  *   <li>智能问答：接收问题 -> 向量化问题 -> 在向量库中检索相关片段 -> 结合上下文调用 LLM 生成回答</li>
@@ -56,14 +58,11 @@ import java.util.function.Consumer;
 @RequiredArgsConstructor
 public class RagService {
 
-    /** 聊天语言模型，用于生成智能回答 */
-    private final ChatLanguageModel chatLanguageModel;
+    /** 模型工厂，用于动态获取聊天语言模型 */
+    private final ModelFactory modelFactory;
 
-    /** 流式聊天语言模型，用于流式输出 */
-    private final StreamingChatLanguageModel streamingChatLanguageModel;
-
-    /** 嵌入模型，用于将文本转换为向量表示 */
-    private final EmbeddingModel embeddingModel;
+    /** 嵌入模型工厂，用于动态获取嵌入模型 */
+    private final EmbeddingModelFactory embeddingModelFactory;
 
     /** 向量存储库，用于存储和检索文本片段及其向量 */
     private final EmbeddingStore<TextSegment> embeddingStore;
@@ -90,7 +89,7 @@ public class RagService {
      *
      * @param document 待入库的 LangChain4j Document 对象，包含文档内容和元数据
      */
-    public DocumentVectorResult addDocument(Document document) {
+public DocumentVectorResult addDocument(Document document) {
         // 根据配置参数创建文档分割器
         // 使用递归分割策略，按配置的块大小和重叠度进行分割
         DocumentSplitter splitter = DocumentSplitters.recursive(
@@ -109,8 +108,8 @@ public class RagService {
             segment.metadata().put("doc_id", docId);
         }
 
-        // 调用嵌入模型批量向量化所有文本片段
-        List<Embedding> embeddings = embeddingModel.embedAll(segments).content();
+        // 通过工厂获取嵌入模型并批量向量化所有文本片段
+        List<Embedding> embeddings = embeddingModelFactory.getEmbeddingModel().embedAll(segments).content();
         // 将向量和对应的文本片段一并写入向量数据库
         List<String> vectorIds = embeddingStore.addAll(embeddings, segments);
 
@@ -156,6 +155,10 @@ public class RagService {
      * @return AI 生成的回答文本
      */
     public String query(String question) {
+        // 通过工厂获取模型
+        var chatLanguageModel = modelFactory.getChatLanguageModel();
+        var embeddingModel = embeddingModelFactory.getEmbeddingModel();
+
         // 创建内容检索器，用于从向量数据库中检索与问题相关的文档片段
         // maxResults: 最大返回结果数量，控制上下文的丰富度
         // minScore: 最低相似度阈值，过滤掉相关性过低的结果
@@ -210,6 +213,10 @@ public class RagService {
             Consumer<TokenUsage> onComplete,
             Consumer<Throwable> onError) {
         try {
+            // 通过工厂获取模型
+            var streamingChatLanguageModel = modelFactory.getStreamingChatLanguageModel();
+            var embeddingModel = embeddingModelFactory.getEmbeddingModel();
+
             // 创建内容检索器
             ContentRetriever retriever = EmbeddingStoreContentRetriever.builder()
                     .embeddingStore(embeddingStore)
@@ -289,6 +296,9 @@ public class RagService {
      * @return 与查询最相关的 TextSegment 列表，按相关性降序排列
      */
     public List<TextSegment> retrieveRelevantDocuments(String query) {
+        // 通过工厂获取嵌入模型
+        var embeddingModel = embeddingModelFactory.getEmbeddingModel();
+
         // 将查询文本通过嵌入模型转换为向量表示
         Embedding queryEmbedding = embeddingModel.embed(query).content();
 

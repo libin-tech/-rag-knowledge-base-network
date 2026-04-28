@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模型配置 - RAG知识库</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --sidebar-width: 250px;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            padding: 20px 0;
+            z-index: 1000;
+        }
+
+        .sidebar-brand {
+            padding: 0 20px 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-brand h4 {
+            color: white;
+            margin: 0;
+            font-size: 1.3rem;
+        }
+
+        .sidebar-brand small {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.8rem;
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 12px 20px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 30px;
+            min-height: 100vh;
+        }
+
+        .config-section {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .config-section h4 {
+            color: #4f46e5;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .mode-indicator {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .mode-dashscope { background: #fef3c7; color: #92400e; }
+        .mode-ollama { background: #d1fae5; color: #065f46; }
+        .mode-openai { background: #dbeafe; color: #1e40af; }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-wrapper input {
+            padding-right: 40px;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #718096;
+            padding: 5px;
+        }
+
+        .password-toggle:hover {
+            color: #4f46e5;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.show { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <h4><i class="bi bi-journal-text"></i> RAG知识库</h4>
+            <small>管理后台</small>
+        </div>
+        <nav class="nav flex-column">
+            <a class="nav-link" href="/admin/upload">
+                <i class="bi bi-cloud-upload-fill"></i> 文档上传
+            </a>
+            <a class="nav-link" href="/admin/documents">
+                <i class="bi bi-file-earmark-text-fill"></i> 文档管理
+            </a>
+            <a class="nav-link" href="/admin/chat">
+                <i class="bi bi-chat-dots-fill"></i> 问答测试
+            </a>
+            <a class="nav-link active" href="/admin/config">
+                <i class="bi bi-gear-fill"></i> 模型配置
+            </a>
+            <a class="nav-link" href="/admin/channel">
+                <i class="bi bi-chat-dots-fill"></i> 消息渠道
+            </a>
+            <a class="nav-link" href="/logout" style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+                <i class="bi bi-box-arrow-right"></i> 退出登录
+            </a>
+        </nav>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <div class="config-section">
+            <h4><i class="bi bi-robot"></i> LLM 配置</h4>
+
+            <div class="mb-3">
+                <label class="form-label">当前模式</label>
+                <span id="llmModeIndicator" class="mode-indicator">加载中...</span>
+            </div>
+
+            <form id="llmForm">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">模式选择</label>
+                        <select class="form-select" name="mode">
+                            <option value="dashscope">DashScope (阿里云通义千问)</option>
+                            <option value="ollama">Ollama (本地部署)</option>
+                            <option value="openai">OpenAI (OpenAI协议模型)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="alert alert-info mt-3">
+                    <i class="bi bi-info-circle"></i> 选择不同模式后，请填写对应配置的参数，然后点击保存按钮
+                </div>
+
+                <div id="dashscopeLlmConfig" class="mt-4">
+                    <h6><i class="bi bi-cloud"></i> DashScope 配置</h6>
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <label class="form-label">API Key</label>
+                            <div class="password-wrapper">
+                                <input type="password" class="form-control" name="dashscope_apiKey" placeholder="请输入阿里云API Key">
+                                <button type="button" class="password-toggle" onclick="togglePassword(this)">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">模型名称</label>
+                            <input type="text" class="form-control" name="dashscope_modelName" value="qwen-plus">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="ollamaLlmConfig" class="mt-4" style="display: none;">
+                    <h6><i class="bi bi-pc"></i> Ollama 配置</h6>
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <label class="form-label">服务地址</label>
+                            <input type="text" class="form-control" name="ollama_baseUrl" value="http://127.0.0.1:11434">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">模型名称</label>
+                            <input type="text" class="form-control" name="ollama_modelName" value="qwen3">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">超时时间</label>
+                            <input type="text" class="form-control" name="ollama_timeout" value="60s">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="openaiLlmConfig" class="mt-4" style="display: none;">
+                    <h6><i class="bi bi-stars"></i> OpenAI 配置</h6>
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <label class="form-label">API Key</label>
+                            <div class="password-wrapper">
+                                <input type="password" class="form-control" name="openai_apiKey" placeholder="请输入OpenAI API Key">
+                                <button type="button" class="password-toggle" onclick="togglePassword(this)">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">服务地址</label>
+                            <input type="text" class="form-control" name="openai_baseUrl" value="https://api.openai.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">模型名称</label>
+                            <input type="text" class="form-control" name="openai_modelName" value="gpt-4o-mini">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">超时时间</label>
+                            <input type="text" class="form-control" name="openai_timeout" value="120s">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 text-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg"></i> 保存配置
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="config-section">
+            <h4><i class="bi bi-braces-asterisk"></i> Embedding 配置</h4>
+
+            <div class="mb-3">
+                <label class="form-label">当前模式</label>
+                <span id="embeddingModeIndicator" class="mode-indicator">加载中...</span>
+            </div>
+
+            <form id="embeddingForm">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">模式选择</label>
+                        <select class="form-select" name="mode">
+                            <option value="dashscope">DashScope (阿里云通义千问)</option>
+                            <option value="ollama">Ollama (本地部署)</option>
+                            <option value="openai">OpenAI (OpenAI协议模型)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="dashscopeEmbeddingConfig" class="mt-4">
+                    <h6><i class="bi bi-cloud"></i> DashScope 配置</h6>
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <label class="form-label">API Key</label>
+                            <div class="password-wrapper">
+                                <input type="password" class="form-control" name="dashscope_apiKey" placeholder="请输入阿里云API Key">
+                                <button type="button" class="password-toggle" onclick="togglePassword(this)">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">模型名称</label>
+                            <input type="text" class="form-control" name="dashscope_modelName" value="text-embedding-v3">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="ollamaEmbeddingConfig" class="mt-4" style="display: none;">
+                    <h6><i class="bi bi-pc"></i> Ollama 配置</h6>
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <label class="form-label">服务地址</label>
+                            <input type="text" class="form-control" name="ollama_baseUrl" value="http://127.0.0.1:11434">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">模型名称</label>
+                            <input type="text" class="form-control" name="ollama_modelName" value="nomic-embed-text">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">超时时间</label>
+                            <input type="text" class="form-control" name="ollama_timeout" value="60s">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="openaiEmbeddingConfig" class="mt-4" style="display: none;">
+                    <h6><i class="bi bi-stars"></i> OpenAI 配置</h6>
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <label class="form-label">API Key</label>
+                            <div class="password-wrapper">
+                                <input type="password" class="form-control" name="openai_apiKey" placeholder="请输入OpenAI API Key">
+                                <button type="button" class="password-toggle" onclick="togglePassword(this)">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">服务地址</label>
+                            <input type="text" class="form-control" name="openai_baseUrl" value="https://api.openai.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">模型名称</label>
+                            <input type="text" class="form-control" name="openai_modelName" value="text-embedding-3-small">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">超时时间</label>
+                            <input type="text" class="form-control" name="openai_timeout" value="120s">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 text-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg"></i> 保存配置
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="text-center text-muted mt-4" style="font-size: 0.8rem;">
+            © 2026 xxx公司. All Rights Reserved.
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    function loadConfig() {
+        loadLlmConfig();
+        loadEmbeddingConfig();
+    }
+
+    function loadLlmConfig() {
+        fetch('/admin/api/config/llm')
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const config = data.data;
+                    const mode = config.mode || 'dashscope';
+                    updateModeIndicator('llmModeIndicator', mode);
+                    document.querySelector('#llmForm [name="mode"]').value = mode;
+                    document.querySelector('#llmForm [name="dashscope_apiKey"]').value = config.dashscope_apiKey || '';
+                    document.querySelector('#llmForm [name="dashscope_modelName"]').value = config.dashscope_modelName || 'qwen-plus';
+                    document.querySelector('#llmForm [name="ollama_baseUrl"]').value = config.ollama_baseUrl || 'http://127.0.0.1:11434';
+                    document.querySelector('#llmForm [name="ollama_modelName"]').value = config.ollama_modelName || 'qwen3';
+                    document.querySelector('#llmForm [name="ollama_timeout"]').value = config.ollama_timeout || '60s';
+                    document.querySelector('#llmForm [name="openai_apiKey"]').value = config.openai_apiKey || '';
+                    document.querySelector('#llmForm [name="openai_baseUrl"]').value = config.openai_baseUrl || 'https://api.openai.com';
+                    document.querySelector('#llmForm [name="openai_modelName"]').value = config.openai_modelName || 'gpt-4o-mini';
+                    document.querySelector('#llmForm [name="openai_timeout"]').value = config.openai_timeout || '120s';
+                    toggleLlmConfig(mode);
+                }
+            });
+    }
+
+    function loadEmbeddingConfig() {
+        fetch('/admin/api/config/embedding')
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const config = data.data;
+                    const mode = config.mode || 'dashscope';
+                    updateModeIndicator('embeddingModeIndicator', mode);
+                    document.querySelector('#embeddingForm [name="mode"]').value = mode;
+                    document.querySelector('#embeddingForm [name="dashscope_apiKey"]').value = config.dashscope_apiKey || '';
+                    document.querySelector('#embeddingForm [name="dashscope_modelName"]').value = config.dashscope_modelName || 'text-embedding-v3';
+                    document.querySelector('#embeddingForm [name="ollama_baseUrl"]').value = config.ollama_baseUrl || 'http://127.0.0.1:11434';
+                    document.querySelector('#embeddingForm [name="ollama_modelName"]').value = config.ollama_modelName || 'nomic-embed-text';
+                    document.querySelector('#embeddingForm [name="ollama_timeout"]').value = config.ollama_timeout || '60s';
+                    toggleEmbeddingConfig(mode);
+                }
+            });
+    }
+
+    function updateModeIndicator(elementId, mode) {
+        const indicator = document.getElementById(elementId);
+        const modes = {
+            'dashscope': { text: 'DashScope (阿里云)', class: 'mode-dashscope' },
+            'ollama': { text: 'Ollama (本地)', class: 'mode-ollama' },
+            'openai': { text: 'OpenAI (协议模型)', class: 'mode-openai' }
+        };
+        const modeInfo = modes[mode] || modes['dashscope'];
+        indicator.textContent = modeInfo.text;
+        indicator.className = 'mode-indicator ' + modeInfo.class;
+    }
+
+    function toggleLlmConfig(mode) {
+        document.getElementById('dashscopeLlmConfig').style.display = mode === 'dashscope' ? 'block' : 'none';
+        document.getElementById('ollamaLlmConfig').style.display = mode === 'ollama' ? 'block' : 'none';
+        document.getElementById('openaiLlmConfig').style.display = mode === 'openai' ? 'block' : 'none';
+    }
+
+    function toggleEmbeddingConfig(mode) {
+        document.getElementById('dashscopeEmbeddingConfig').style.display = mode === 'dashscope' ? 'block' : 'none';
+        document.getElementById('ollamaEmbeddingConfig').style.display = mode === 'ollama' ? 'block' : 'none';
+        document.getElementById('openaiEmbeddingConfig').style.display = mode === 'openai' ? 'block' : 'none';
+    }
+
+    function togglePassword(btn) {
+        const input = btn.parentElement.querySelector('input');
+        if (input.type === 'password') {
+            input.type = 'text';
+            btn.innerHTML = '<i class="bi bi-eye-slash"></i>';
+        } else {
+            input.type = 'password';
+            btn.innerHTML = '<i class="bi bi-eye"></i>';
+        }
+    }
+
+    document.querySelector('#llmForm [name="mode"]').addEventListener('change', function() {
+        toggleLlmConfig(this.value);
+    });
+
+    document.querySelector('#embeddingForm [name="mode"]').addEventListener('change', function() {
+        toggleEmbeddingConfig(this.value);
+    });
+
+    document.getElementById('llmForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const configs = [
+            { key: 'mode', value: formData.get('mode') },
+            { key: 'dashscope_apiKey', value: formData.get('dashscope_apiKey') },
+            { key: 'dashscope_modelName', value: formData.get('dashscope_modelName') },
+            { key: 'ollama_baseUrl', value: formData.get('ollama_baseUrl') },
+            { key: 'ollama_modelName', value: formData.get('ollama_modelName') },
+            { key: 'ollama_timeout', value: formData.get('ollama_timeout') },
+            { key: 'openai_apiKey', value: formData.get('openai_apiKey') },
+            { key: 'openai_baseUrl', value: formData.get('openai_baseUrl') },
+            { key: 'openai_modelName', value: formData.get('openai_modelName') },
+            { key: 'openai_timeout', value: formData.get('openai_timeout') }
+        ];
+
+        Promise.all(configs.map(c =>
+            fetch('/admin/api/config/llm', {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ configKey: c.key, configValue: c.value, modifier: 'admin' })
+            })
+        )).then(() => {
+            alert('LLM配置保存成功，模型已重新加载');
+            loadLlmConfig();
+        });
+    });
+
+    document.getElementById('embeddingForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const configs = [
+            { key: 'mode', value: formData.get('mode') },
+            { key: 'dashscope_apiKey', value: formData.get('dashscope_apiKey') },
+            { key: 'dashscope_modelName', value: formData.get('dashscope_modelName') },
+            { key: 'ollama_baseUrl', value: formData.get('ollama_baseUrl') },
+            { key: 'ollama_modelName', value: formData.get('ollama_modelName') },
+            { key: 'ollama_timeout', value: formData.get('ollama_timeout') },
+            { key: 'openai_apiKey', value: formData.get('openai_apiKey') },
+            { key: 'openai_baseUrl', value: formData.get('openai_baseUrl') },
+            { key: 'openai_modelName', value: formData.get('openai_modelName') },
+            { key: 'openai_timeout', value: formData.get('openai_timeout') }
+        ];
+
+        Promise.all(configs.map(c =>
+            fetch('/admin/api/config/embedding', {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ configKey: c.key, configValue: c.value, modifier: 'admin' })
+            })
+        )).then(() => {
+            alert('Embedding配置保存成功，模型已重新加载');
+            loadEmbeddingConfig();
+        });
+    });
+
+    loadConfig();
+    </script>
+</body>
+</html>

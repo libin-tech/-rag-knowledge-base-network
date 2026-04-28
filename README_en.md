@@ -2,16 +2,18 @@
 
 [中文](README.md) | English
 
-This project is a LangChain4j-based RAG (Retrieval-Augmented Generation) knowledge base system. It provides a web admin panel, REST APIs, streaming Q&A, and bot integrations for both Feishu and DingTalk.
+A LangChain4j-based RAG (Retrieval-Augmented Generation) knowledge base system with web admin panel, REST APIs, streaming Q&A, and bot integrations for Feishu and DingTalk.
 
 ## Features
 
-- End-to-end RAG pipeline: PDF parsing, chunking, embedding, Milvus retrieval, LLM generation
-- Multi-model support: switch between DashScope (cloud) and Ollama (local)
-- Dual access modes: web admin pages and REST APIs
-- Streaming Q&A via SSE
-- Bot integrations: Feishu and DingTalk
-- Observability: key-stage logging including retrieval-enhancement timing
+- **End-to-end RAG pipeline**: PDF parsing, chunking, embedding, Milvus retrieval, LLM generation
+- **Multi-model support**: switchable DashScope (cloud), Ollama (local), OpenAI-compatible models
+- **Dual access**: web admin pages + REST APIs
+- **Streaming Q&A**: SSE support
+- **Bot integrations**: Feishu and DingTalk robots
+- **Observability**: key-stage logging with retrieval-enhancement timing
+- **Model configuration**: real-time LLM/Embedding config via admin UI
+- **Message channels**: enable/disable Feishu and DingTalk robots
 
 ## Tech Stack
 
@@ -24,24 +26,29 @@ This project is a LangChain4j-based RAG (Retrieval-Augmented Generation) knowled
 
 ## Project Structure
 
-- `src/main/java/com/bin/ragknowledge/controller`: page and API controllers
-- `src/main/java/com/bin/ragknowledge/service`: document parsing and core RAG logic
-- `src/main/resources/application.yml`: runtime configuration (model, vector DB, bots)
+```
+src/main/java/com/bin/ragknowledge/
+├── controller/     # Page and API controllers
+├── service/       # Core business logic
+├── repository/    # Data access layer
+├── config/       # Configuration classes
+└── enums/        # Enum constants
+```
+
+Core resources:
+- `src/main/resources/application.yml`: system configuration
 - `docker-compose.yml`: all-in-one orchestration for Milvus + MinIO + Etcd + app
 
 ## Quick Start
 
 ### Option 1: Docker Compose (Recommended)
 
-1. Prepare a `.env` file (you can start from `.env.example`).
-2. Configure at least:
-   - `DASHSCOPE_API_KEY` (required when using DashScope)
-   - `FEISHU_APP_ID`, `FEISHU_APP_SECRET` (if enabling Feishu bot)
-   - `DINGTALK_APP_KEY`, `DINGTALK_APP_SECRET` (if enabling DingTalk bot)
+1. Prepare `.env` file (see `.env.example`)
+2. Configure environment variables
 3. Start services:
    - Windows: `start.bat`
    - macOS/Linux: `docker-compose up -d`
-4. Open: `http://localhost:8080`
+4. Access: `http://localhost:8080`
 
 Stop services:
 - Windows: `stop.bat`
@@ -51,70 +58,101 @@ Stop services:
 
 Prerequisites:
 - Java 21 installed
-- Maven installed (optional if the JAR already exists)
-- Reachable Milvus and model service (DashScope or Ollama)
+- Maven installed
+- Accessible Milvus and model service
 
 Steps:
 1. Build: `mvn clean package -DskipTests`
-2. Start:
-   - Windows: `java -jar target/rag-knowledge-base-1.0.0.jar`
-   - macOS/Linux: `chmod +x start.sh && ./start.sh`
-3. Stop (macOS/Linux): `chmod +x stop.sh && ./stop.sh`
+2. Run: `java -jar target/rag-knowledge-base-1.0.0.jar`
+3. Stop: terminate the process
 
 ## Key Configuration
 
-Configuration file: `src/main/resources/application.yml`
+File: `src/main/resources/application.yml`
 
-- `llm.mode`: `dashscope` or `ollama`
-- `embedding.mode`: `dashscope` or `ollama`
-- `milvus.host` / `milvus.port`: Milvus endpoint
-- `rag.chunk.max-segment-size`: chunk size
-- `rag.chunk.max-overlap-size`: chunk overlap
-- `rag.retrieval.max-results`: max retrieved segments
-- `rag.retrieval.min-score`: retrieval similarity threshold
-- `feishu.app.*`: Feishu app credentials
-- `dingtalk.app.*`: DingTalk app credentials
+| Config | Description |
+|--------|------------|
+| `milvus.host` / `milvus.port` | Milvus endpoint |
+| `rag.chunk.max-segment-size` | chunk size |
+| `rag.chunk.max-overlap-size` | chunk overlap |
+| `rag.retrieval.max-results` | max retrieved segments |
+| `rag.retrieval.min-score` | similarity threshold |
+
+## Admin Panel
+
+Access `/admin` to enter the admin panel:
+
+| Page | Path | Description |
+|------|------|------------|
+| Document Upload | `/admin/upload` | PDF upload and parsing |
+| Document Management | `/admin/documents` | uploaded document list |
+| Q&A Test | `/admin/chat` | RAG Q&A testing |
+| Model Config | `/admin/config` | LLM/Embedding config |
+| Message Channel | `/admin/channel` | Feishu/DingTalk config |
+
+### Model Configuration
+
+Access `/admin/config` to manage LLM and Embedding models:
+
+- **LLM Configuration**: supports DashScope, Ollama, OpenAI modes
+- **Embedding Configuration**: supports DashScope, Ollama, OpenAI modes
+
+Each mode supports independent API Key, endpoint, model name, timeout configuration with real-time switching.
+
+### Message Channels
+
+Access `/admin/channel` to configure message channels:
+
+- **Feishu Bot**: appId + appSecret
+- **DingTalk Bot**: clientId + clientSecret
+
+Supports enable/disable, config auto-takes effect after save.
 
 > Use environment variables for secrets. Do not commit real keys to the repository.
 
-## API Overview
+## API Reference
 
 Base path: `/api`
 
-- `POST /api/upload`: upload one PDF
-- `POST /api/upload/batch`: upload multiple PDFs
-- `POST /api/query`: non-streaming Q&A
-- `GET /api/health`: health check
+| API | Method | Description |
+|------|-------|------------|
+| `/api/upload` | POST | upload single PDF |
+| `/api/upload/batch` | POST | batch upload PDFs |
+| `/api/query` | POST | non-streaming Q&A |
+| `/api/health` | GET | health check |
 
 Admin path: `/admin`
 
-- `/admin/upload`: upload page
-- `/admin/chat`: chat test page
-- `/admin/documents`: document management page
-- `POST /admin/api/query/stream`: streaming Q&A (SSE)
-
-## Bot Integration
-
-- Feishu: configure `feishu.app.app-id` and `feishu.app.app-secret`
-- DingTalk: configure `dingtalk.app.app-key` and `dingtalk.app.app-secret`
+| API | Method | Description |
+|------|-------|------------|
+| `/admin/api/query/stream` | POST | streaming Q&A (SSE) |
+| `/admin/api/documents` | GET | document list |
+| `/admin/api/document/{id}` | DELETE | delete document |
+| `/admin/api/config/llm` | GET/PUT | LLM config |
+| `/admin/api/config/embedding` | GET/PUT | Embedding config |
+| `/admin/api/channel/list` | GET | channel list |
+| `/admin/api/channel/{type}` | PUT | update channel |
 
 ## FAQ
 
 - **No retrieval results after upload**: check Milvus connectivity and embedding dimension compatibility.
-- **Responses are slow**: reduce `rag.retrieval.max-results` or switch to a faster model.
-- **Docker startup issues**: inspect logs with `docker-compose logs -f`.
+- **Slow responses**: reduce max results or switch to a faster model.
+- **Docker startup issues**: run `docker-compose logs -f` to check service health.
+- **Config not taking effect**: refresh page after save, restart app if needed.
 
 ## Web Screenshots
 
 ![Login Page](images/login_img.png)
 ![Document Upload Page](images/upload_img.png)
 ![Document Management Page](images/doc_mng.png)
-![Question Answering Page](images/question_img.png)
+![Q&A Test Page](images/question_img.png)
+![Model Config Page](images/LLM_CONFIG_img.png)
+![Message Channel Page](images/channel_img.png)
 
 ## Feishu Bot Screenshot
 
-![Feishu Bot Screenshot](images/feishu_img.png)
+![Feishu Bot](images/feishu_img.png)
 
 ## DingTalk Bot Screenshot
 
-![DingTalk Bot Screenshot](images/dingtalk_img.png)
+![DingTalk Bot](images/dingtalk_img.png)

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>消息渠道管理 - RAG知识库</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --sidebar-width: 250px;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            padding: 20px 0;
+            z-index: 1000;
+        }
+
+        .sidebar-brand {
+            padding: 0 20px 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-brand h4 {
+            color: white;
+            margin: 0;
+            font-size: 1.3rem;
+        }
+
+        .sidebar-brand small {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.8rem;
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 12px 20px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 30px;
+            min-height: 100vh;
+        }
+
+        .channel-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4f46e5;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .channel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .channel-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .channel-title h4 {
+            margin: 0;
+            color: #2d3748;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-enabled { background: #d1fae5; color: #065f46; }
+        .status-disabled { background: #fee2e2; color: #991b1b; }
+
+        .config-section {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-wrapper input {
+            padding-right: 40px;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #718096;
+            padding: 5px;
+        }
+
+        .password-toggle:hover {
+            color: #4f46e5;
+        }
+
+        .config-row {
+            display: none;
+        }
+
+        .config-row.active {
+            display: block;
+        }
+
+        .feishu-icon { color: #1677ff; }
+        .dingtalk-icon { color: #1677ff; }
+        .wechat-icon { color: #07c160; }
+
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.show { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <h4><i class="bi bi-journal-text"></i> RAG知识库</h4>
+            <small>管理后台</small>
+        </div>
+        <nav class="nav flex-column">
+            <a class="nav-link" href="/admin/upload">
+                <i class="bi bi-cloud-upload-fill"></i> 文档上传
+            </a>
+            <a class="nav-link" href="/admin/documents">
+                <i class="bi bi-file-earmark-text-fill"></i> 文档管理
+            </a>
+            <a class="nav-link" href="/admin/chat">
+                <i class="bi bi-chat-dots-fill"></i> 问答测试
+            </a>
+            <a class="nav-link" href="/admin/config">
+                <i class="bi bi-gear-fill"></i> 模型配置
+            </a>
+            <a class="nav-link active" href="/admin/channel">
+                <i class="bi bi-chat-dots-fill"></i> 消息渠道
+            </a>
+            <a class="nav-link" href="/logout" style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+                <i class="bi bi-box-arrow-right"></i> 退出登录
+            </a>
+        </nav>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <div id="channelList"></div>
+
+        <div class="text-center text-muted mt-4" style="font-size: 0.8rem;">
+            © 2026 xxx公司. All Rights Reserved.
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    const channelConfigs = {
+        'FEISHU': {
+            fields: [
+                { name: 'appId', label: 'App ID', placeholder: '请输入飞书 App ID' },
+                { name: 'appSecret', label: 'App Secret', placeholder: '请输入飞书 App Secret', type: 'password' }
+            ]
+        },
+        'DINGTALK': {
+            fields: [
+                { name: 'clientId', label: 'Client ID', placeholder: '请输入钉钉 Client ID' },
+                { name: 'clientSecret', label: 'Client Secret', placeholder: '请输入钉钉 Client Secret', type: 'password' }
+            ]
+        }
+    };
+
+    function togglePassword(btn) {
+        const input = btn.parentElement.querySelector('input');
+        if (input.type === 'password') {
+            input.type = 'text';
+            btn.innerHTML = '<i class="bi bi-eye-slash"></i>';
+        } else {
+            input.type = 'password';
+            btn.innerHTML = '<i class="bi bi-eye"></i>';
+        }
+    }
+
+    function loadChannels() {
+        fetch('/admin/api/channel/list')
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    renderChannels(data.data || []);
+                }
+            });
+    }
+
+    function renderChannels(channels) {
+        const container = document.getElementById('channelList');
+        if (!channels.length) {
+            container.innerHTML = '<div class="alert alert-info">暂无配置的消息渠道</div>';
+            return;
+        }
+
+        container.innerHTML = channels.map(channel => {
+            const config = channelConfigs[channel.channelType] || {};
+            const statusClass = channel.enabled ? 'status-enabled' : 'status-disabled';
+            const statusText = channel.enabled ? '已启用' : '已停用';
+            const configValue = channel.configJson ? JSON.parse(channel.configJson) : {};
+
+            return `
+                <div class="channel-card">
+                    <div class="channel-header">
+                        <div class="channel-title">
+                            <i class="bi bi-chat-dots-fill"></i>
+                            <h4>${channel.channelName || channel.channelType}</h4>
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm ${channel.enabled ? 'btn-outline-danger' : 'btn-outline-primary'}"
+                                    onclick="toggleChannel('${channel.channelType}', ${!channel.enabled})">
+                                ${channel.enabled ? '停用' : '启用'}
+                            </button>
+                            <button class="btn btn-sm btn-link" onclick="showConfig('${channel.channelType}')">
+                                配置
+                            </button>
+                        </div>
+                    </div>
+                    <div class="config-section" id="config-${channel.channelType}" style="display: none;">
+                        <form id="form-${channel.channelType}">
+                            ${config.fields ? config.fields.map(field => `
+                                <div class="row mb-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label">${field.label}</label>
+                                        ${field.type === 'password' ? `
+                                            <div class="password-wrapper">
+                                                <input type="password" class="form-control"
+                                                       name="${field.name}"
+                                                       placeholder="${field.placeholder}"
+                                                       value="${configValue[field.name] || ''}">
+                                                <button type="button" class="password-toggle" onclick="togglePassword(this)">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                            </div>
+                                        ` : `
+                                            <input type="text" class="form-control"
+                                                   name="${field.name}"
+                                                   placeholder="${field.placeholder}"
+                                                   value="${configValue[field.name] || ''}">
+                                        `}
+                                    </div>
+                                </div>
+                            `).join('') : ''}
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-primary btn-sm" onclick="saveConfig('${channel.channelType}')">
+                                    保存
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function toggleChannel(channelType, enabled) {
+        fetch('/admin/api/channel/' + channelType, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ channelType, enabled, modifier: 'admin' })
+        }).then(r => r.json()).then(data => {
+            if (data.success) {
+                loadChannels();
+            } else {
+                alert('操作失败: ' + data.message);
+            }
+        });
+    }
+
+    function showConfig(channelType) {
+        const el = document.getElementById('config-' + channelType);
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function saveConfig(channelType) {
+        const form = document.getElementById('form-' + channelType);
+        const formData = new FormData(form);
+        const configValueJSON = JSON.stringify(Object.fromEntries(formData.entries()));
+
+        fetch('/admin/api/channel/' + channelType, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                configJson: configValueJSON,
+                modifier: 'admin'
+            })
+        }).then(r => r.json()).then(data => {
+            if (data.success) {
+                alert('保存成功');
+                loadChannels();
+            } else {
+                alert('保存失败: ' + data.message);
+            }
+        });
+    }
+
+    loadChannels();
+    </script>
+</body>
+</html>
