@@ -19,7 +19,7 @@ spring:
       enabled: true
       force: true
   datasource:
-    url: jdbc:postgresql://127.0.0.1:5432/rag_knowledge
+    url: ${POSTGRES_URL:jdbc:postgresql://127.0.0.1:5432/rag_knowledge}
     username: ${POSTGRES_USERNAME:postgres}
     password: ${POSTGRES_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
