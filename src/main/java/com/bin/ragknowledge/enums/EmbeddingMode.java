@@ -1,19 +1,30 @@
 package com.bin.ragknowledge.enums;
 
+import com.baomidou.mybatisplus.annotation.EnumValue;
+import com.fasterxml.jackson.annotation.JsonValue;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
 /**
  * Embedding模式枚举
  * 支持DashScope、Ollama、OpenAI三种Embedding模型
  */
-public class EmbeddingMode {
+@AllArgsConstructor
+@Getter
+public enum EmbeddingMode {
 
     /** DashScope模式 */
-    public static final String DASHSCOPE = "dashscope";
+    DASHSCOPE("dashscope"),
 
     /** Ollama模式 */
-    public static final String OLLAMA = "ollama";
+    OLLAMA("ollama"),
 
     /** OpenAI模式 */
-    public static final String OPENAI = "openai";
+    OPENAI("openai");
 
-    private EmbeddingMode() {}
+    @JsonValue
+    @EnumValue
+    private final String value;
+
+
 }

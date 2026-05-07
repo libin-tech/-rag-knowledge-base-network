@@ -49,6 +49,12 @@
     <!-- ... existing code ... -->
 
     <dependencies>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- ==================== Spring Boot 核心依赖 ==================== -->
 
         <!-- ... existing code ... -->

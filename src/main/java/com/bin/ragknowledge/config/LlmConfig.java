@@ -13,7 +13,7 @@ public class LlmConfig {
     /**
      * LLM模式：dashscope/ollama/openai
      */
-    private String mode = LlmMode.DASHSCOPE;
+    private String mode = LlmMode.DASHSCOPE.getValue();
 
     /**
      * DashScope API密钥

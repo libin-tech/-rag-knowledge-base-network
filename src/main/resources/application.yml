@@ -7,9 +7,7 @@ spring:
   application:
     name: rag-knowledge-base
   config:
-    # 本地启动时可在项目根目录创建 application-local.yml 覆盖默认配置
-    # 文件不存在也不会报错
-    import: optional:file:./application-local.yml
+    import: "optional:file:.env[.properties]"
   servlet:
     multipart:
       max-file-size: 50MB
@@ -32,11 +30,7 @@ mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
-  global-config:
-    db-config:
-      logic-delete-field: deleted
-      logic-delete-value: true
-      logic-not-delete-value: false
+
 
 
 # Milvus 向量数据库配置
@@ -46,7 +40,7 @@ milvus:
   username: ${MILVUS_USERNAME:root}
   password: ${MILVUS_PASSWORD:Milvus}
   collection-name: Enterprise_Knowledge_Base
-  dimension: 4096  # 根据 embedding 模型调整
+  dimension: 1024  # 根据 embedding 模型调整
 
 # RAG 配置
 rag:

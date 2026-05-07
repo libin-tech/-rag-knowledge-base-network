@@ -10,11 +10,11 @@ import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import jakarta.annotation.PostConstruct;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,42 +64,59 @@ public class ModelFactory {
     }
 
     private ChatLanguageModel createChatLanguageModel(String mode, LlmConfig config) {
-        return switch (mode.toLowerCase()) {
-            case LlmMode.OLLAMA -> OllamaChatModel.builder()
+
+
+        if (LlmMode.DASHSCOPE.getValue().equals(mode)) {
+            return QwenChatModel.builder()
+                    .apiKey(config.getDashscopeApiKey())
+                    .modelName(config.getDashscopeModelName())
+                    .build();
+        }
+        if (LlmMode.OLLAMA.getValue().equals(mode)) {
+            return OllamaChatModel.builder()
                     .baseUrl(config.getOllamaBaseUrl())
                     .modelName(config.getOllamaModelName())
                     .timeout(Duration.parse("PT" + config.getOllamaTimeout().toUpperCase()))
                     .build();
-            case LlmMode.OPENAI -> OpenAiChatModel.builder()
+        }
+        if (LlmMode.OPENAI.getValue().equals(mode)) {
+            return OpenAiChatModel.builder()
                     .apiKey(config.getOpenaiApiKey())
                     .baseUrl(config.getOpenaiBaseUrl())
                     .modelName(config.getOpenaiModelName())
                     .timeout(Duration.parse("PT" + config.getOpenaiTimeout().toUpperCase()))
                     .build();
-            default -> QwenChatModel.builder()
-                    .apiKey(config.getDashscopeApiKey())
-                    .modelName(config.getDashscopeModelName())
-                    .build();
-        };
+        }
+
+        throw new IllegalArgumentException("不支持的LLM模式：" + mode);
+
     }
 
     private StreamingChatLanguageModel createStreamingChatLanguageModel(String mode, LlmConfig config) {
-        return switch (mode.toLowerCase()) {
-            case LlmMode.OLLAMA -> OllamaStreamingChatModel.builder()
+
+
+        if (LlmMode.DASHSCOPE.getValue().equals(mode)) {
+            return QwenStreamingChatModel.builder()
+                    .apiKey(config.getDashscopeApiKey())
+                    .modelName(config.getDashscopeModelName())
+                    .build();
+        }
+        if (LlmMode.OLLAMA.getValue().equals(mode)) {
+            return OllamaStreamingChatModel.builder()
                     .baseUrl(config.getOllamaBaseUrl())
                     .modelName(config.getOllamaModelName())
                     .timeout(Duration.parse("PT" + config.getOllamaTimeout().toUpperCase()))
                     .build();
-            case LlmMode.OPENAI -> OpenAiStreamingChatModel.builder()
+        }
+        if (LlmMode.OPENAI.getValue().equals(mode)) {
+            return OpenAiStreamingChatModel.builder()
                     .apiKey(config.getOpenaiApiKey())
                     .baseUrl(config.getOpenaiBaseUrl())
                     .modelName(config.getOpenaiModelName())
                     .timeout(Duration.parse("PT" + config.getOpenaiTimeout().toUpperCase()))
                     .build();
-            default -> QwenStreamingChatModel.builder()
-                    .apiKey(config.getDashscopeApiKey())
-                    .modelName(config.getDashscopeModelName())
-                    .build();
-        };
+        }
+
+        throw new IllegalArgumentException("不支持的LLM模式：" + mode);
     }
 }

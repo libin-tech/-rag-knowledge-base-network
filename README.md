@@ -14,6 +14,7 @@
 - **可观测性**：关键链路日志（含检索增强阶段耗时）
 - **模型配置管理**：支持后台界面实时配置 LLM 和 Embedding 模型
 - **消息渠道管理**：支持飞书、钉钉机器人启用/停用
+- **知识库管理**：支持多知识库创建、启用/停用、切换
 
 ## 技术栈
 
@@ -31,7 +32,12 @@ src/main/java/com/bin/ragknowledge/
 ├── controller/     # 页面与 API 控制器
 ├── service/       # 核心业务逻辑
 ├── repository/    # 数据访问层
+│   ├── mapper/   # Mapper 接口
+│   └── entity/   # 实体类（DO）
 ├── config/       # 配置类
+├── filter/       # 过滤器
+├── interceptor/  # 拦截器
+├── context/      # 上下文（ThreadLocal等）
 └── enums/        # 枚举常量
 ```
 
@@ -84,11 +90,20 @@ src/main/java/com/bin/ragknowledge/
 
 | 页面 | 路径 | 说明 |
 |------|------|------|
+| 知识库管理 | `/admin/knowledge-base` | 知识库创建、启用/停用、切换 |
 | 文档上传 | `/admin/upload` | PDF 文档上传与解析 |
 | 文档管理 | `/admin/documents` | 已上传文档列表与删除 |
 | 问答测试 | `/admin/chat` | RAG 问答测试 |
 | 模型配置 | `/admin/config` | LLM/Embedding 模型配置 |
 | 消息渠道 | `/admin/channel` | 飞书/钉钉机器人配置 |
+
+### 知识库管理
+
+访问 `/admin/knowledge-base` 管理知识库：
+
+- **创建知识库**：支持自定义名称和描述
+- **启用/停用**：可控制知识库的启用状态
+- **默认知识库**：系统内置默认知识库（ID: default）
 
 ### 模型配置
 
@@ -125,6 +140,10 @@ src/main/java/com/bin/ragknowledge/
 
 | 接口 | 方法 | 说明 |
 |------|------|------|
+| `/admin/api/knowledge-base/list` | GET | 知识库列表 |
+| `/admin/api/knowledge-base` | POST | 创建知识库 |
+| `/admin/api/knowledge-base/{id}` | PUT | 更新知识库 |
+| `/admin/api/knowledge-base/{id}` | DELETE | 删除知识库 |
 | `/admin/api/query/stream` | POST | 流式问答（SSE） |
 | `/admin/api/documents` | GET | 文档列表 |
 | `/admin/api/document/{id}` | DELETE | 删除文档 |
@@ -143,11 +162,13 @@ src/main/java/com/bin/ragknowledge/
 ## Web 效果图
 
 ![登录页](images/login_img.png)
+![知识库管理](images/knowledge_img.png)
 ![文档上传页](images/upload_img.png)
 ![文档管理页](images/doc_mng.png)
 ![问答测试页](images/question_img.png)
 ![模型配置页](images/LLM_CONFIG_img.png)
 ![消息渠道页](images/channel_img.png)
+
 
 ## 飞书机器人效果图
 
@@ -156,3 +177,4 @@ src/main/java/com/bin/ragknowledge/
 ## 钉钉机器人效果图
 
 ![钉钉机器人](images/dingtalk_img.png)
+

@@ -13,7 +13,7 @@ public class EmbeddingConfig {
     /**
      * 向量嵌入模式：dashscope/ollama/openai
      */
-    private String mode = EmbeddingMode.DASHSCOPE;
+    private String mode = EmbeddingMode.DASHSCOPE.getValue();
 
     /**
      * DashScope API密钥

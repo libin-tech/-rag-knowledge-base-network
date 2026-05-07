@@ -1,10 +1,11 @@
 package com.bin.ragknowledge.config;
 
-import com.bin.ragknowledge.enums.EmbeddingMode;
+import com.bin.ragknowledge.enums.LlmMode;
 import com.bin.ragknowledge.service.LlmConfigService;
 import dev.langchain4j.model.dashscope.QwenEmbeddingModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
+import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -43,16 +44,32 @@ public class EmbeddingModelFactory {
     }
 
     private EmbeddingModel createEmbeddingModel(String mode, EmbeddingConfig config) {
-        return switch (mode.toLowerCase()) {
-            case EmbeddingMode.OLLAMA -> OllamaEmbeddingModel.builder()
+
+
+        if (LlmMode.DASHSCOPE.getValue().equals(mode)){
+            return QwenEmbeddingModel.builder()
+                    .apiKey(config.getDashscopeApiKey())
+                    .modelName(config.getDashscopeModelName())
+                    .build();
+        }
+        if (LlmMode.OLLAMA.getValue().equals(mode)){
+            return OllamaEmbeddingModel.builder()
                     .baseUrl(config.getOllamaBaseUrl())
                     .modelName(config.getOllamaModelName())
                     .timeout(Duration.parse("PT" + config.getOllamaTimeout().toUpperCase()))
                     .build();
-            default -> QwenEmbeddingModel.builder()
-                    .apiKey(config.getDashscopeApiKey())
-                    .modelName(config.getDashscopeModelName())
+        }
+        if (LlmMode.OPENAI.getValue().equals(mode)){
+            return OpenAiEmbeddingModel.builder()
+                    .baseUrl(config.getOpenaiBaseUrl())
+                    .apiKey(config.getOpenaiApiKey())
+                    .modelName(config.getOpenaiModelName())
+                    .timeout(Duration.parse("PT" + config.getOpenaiTimeout().toUpperCase()))
                     .build();
-        };
+        }
+
+        throw new IllegalArgumentException("不支持的LLM模式：" + mode);
+
+
     }
 }

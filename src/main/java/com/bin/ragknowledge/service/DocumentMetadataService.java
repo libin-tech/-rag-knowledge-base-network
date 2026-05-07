@@ -41,10 +41,40 @@ public class DocumentMetadataService {
         return documentMetadataMapper.selectList(null);
     }
 
+    /**
+     * 获取指定知识库的文档列表
+     */
+    public List<DocumentMetadataEntity> listByKnowledgeBaseId(String knowledgeBaseId) {
+        QueryWrapper<DocumentMetadataEntity> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("knowledge_base_id", knowledgeBaseId);
+        queryWrapper.orderByDesc("upload_time");
+        return documentMetadataMapper.selectList(queryWrapper);
+    }
+
     public Page<DocumentMetadataEntity> page(int current, int size) {
         Page<DocumentMetadataEntity> page = new Page<>(current, size);
         QueryWrapper<DocumentMetadataEntity> queryWrapper = new QueryWrapper<>();
         queryWrapper.orderByDesc("upload_time");
         return documentMetadataMapper.selectPage(page, queryWrapper);
+    }
+
+    /**
+     * 分页查询指定知识库的文档
+     */
+    public Page<DocumentMetadataEntity> pageByKnowledgeBaseId(int current, int size, String knowledgeBaseId) {
+        Page<DocumentMetadataEntity> page = new Page<>(current, size);
+        QueryWrapper<DocumentMetadataEntity> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("knowledge_base_id", knowledgeBaseId);
+        queryWrapper.orderByDesc("upload_time");
+        return documentMetadataMapper.selectPage(page, queryWrapper);
+    }
+
+    /**
+     * 统计指定知识库的文档数量
+     */
+    public long countByKnowledgeBaseId(String knowledgeBaseId) {
+        QueryWrapper<DocumentMetadataEntity> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("knowledge_base_id", knowledgeBaseId);
+        return documentMetadataMapper.selectCount(queryWrapper);
     }
 }

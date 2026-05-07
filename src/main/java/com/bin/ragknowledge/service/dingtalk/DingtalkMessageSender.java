@@ -39,6 +39,8 @@ public class DingtalkMessageSender implements OpenDingTalkCallbackListener<JSONO
 
     @Getter
     private volatile boolean enabled = false;
+    @Getter
+    private String knowledgeBaseId = "default";
     private static final String PROTOCOL_HTTPS = "https";
     private static final String REGION_CENTRAL = "central";
     private static final long TOKEN_EXPIRY_SECONDS = 7000; // Token
@@ -52,15 +54,21 @@ public class DingtalkMessageSender implements OpenDingTalkCallbackListener<JSONO
     }
 
     public void refreshConfig() {
-        var channel = messageChannelService.getByType(ChannelType.DINGTALK);
+        refreshConfig("default");
+    }
+
+    public void refreshConfig(String knowledgeBaseId) {
+        var channel = messageChannelService.getByTypeAndKb(ChannelType.DINGTALK, knowledgeBaseId);
         if (channel != null) {
             enabled = channel.getEnabled();
+            this.knowledgeBaseId = channel.getKnowledgeBaseId() != null ? channel.getKnowledgeBaseId() : knowledgeBaseId;
             if (channel.getConfigJson() != null) {
                 JSONObject config = JSONObject.parseObject(channel.getConfigJson());
                 clientId = config.getString("clientId");
-                clientSecret =  config.getString("clientSecret");
+                clientSecret = config.getString("clientSecret");
 
-                log.info("钉钉配置已加载, enabled: {}, clientId: {}", enabled, clientId != null ? "已设置" : "空");
+                log.info("钉钉配置已加载, enabled: {}, clientId: {}, knowledgeBaseId: {}",
+                        enabled, clientId != null ? "已设置" : "空", this.knowledgeBaseId);
             }
         }
     }
@@ -160,8 +168,8 @@ public class DingtalkMessageSender implements OpenDingTalkCallbackListener<JSONO
 
         com.alibaba.fastjson2.JSONObject msgParam = new com.alibaba.fastjson2.JSONObject();
 
-        // 执行 RAG 检索
-        String answer = ragService.query(content);
+        // 执行 RAG 检索（使用关联的知识库）
+        String answer = ragService.query(content, knowledgeBaseId);
 
         msgParam.put("title", "🤖 知识库智能助手");
         msgParam.put("text", answer);

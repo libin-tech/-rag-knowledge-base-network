@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-RagKnowledgeBaseApplication<rag-knowledge-base>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.bin.ragknowledge.RagKnowledgeBaseApplication",
+            "projectName": "rag-knowledge-base",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

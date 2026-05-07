@@ -1,5 +1,7 @@
 package com.bin.ragknowledge.service.feishu;
 
+import org.springframework.stereotype.Service;
+
 import com.alibaba.fastjson2.JSONObject;
 import com.bin.ragknowledge.enums.ChannelType;
 import com.bin.ragknowledge.service.MessageChannelService;
@@ -10,11 +12,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.lark.oapi.Client;
 import com.lark.oapi.service.im.v1.model.ReplyMessageReq;
 import com.lark.oapi.service.im.v1.model.ReplyMessageReqBody;
+
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
@@ -32,6 +34,8 @@ public class FeishuMessageSender {
     private String appSecret;
     @Getter
     private volatile boolean enabled = false;
+    @Getter
+    private String knowledgeBaseId = "default";
 
     @PostConstruct
     public void init() {
@@ -39,16 +43,21 @@ public class FeishuMessageSender {
     }
 
     public void refreshConfig() {
-        var channel = messageChannelService.getByType(ChannelType.FEISHU);
+        refreshConfig("default");
+    }
+
+    public void refreshConfig(String knowledgeBaseId) {
+        var channel = messageChannelService.getByTypeAndKb(ChannelType.FEISHU, knowledgeBaseId);
         if (channel != null) {
             enabled = channel.getEnabled();
+            this.knowledgeBaseId = channel.getKnowledgeBaseId() != null ? channel.getKnowledgeBaseId() : knowledgeBaseId;
             if (channel.getConfigJson() != null) {
                 JSONObject config = JSONObject.parseObject(channel.getConfigJson());
                 appId = config.getString("appId");
                 appSecret = config.getString("appSecret");
                 if (appId != null && appSecret != null && !appId.isEmpty()) {
                     client = Client.newBuilder(appId, appSecret).build();
-                    log.info("飞书客户端初始化完成, enabled: {}", enabled);
+                    log.info("飞书客户端初始化完成, enabled: {}, knowledgeBaseId: {}", enabled, this.knowledgeBaseId);
                 }
             }
         }

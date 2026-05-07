@@ -31,9 +31,6 @@ public class BaseEntity implements Serializable {
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private String modifier;
 
-    @TableLogic
-    private Boolean deleted;
-
     @Version
     private Integer version;
 

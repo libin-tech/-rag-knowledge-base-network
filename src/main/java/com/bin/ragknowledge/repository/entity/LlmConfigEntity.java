@@ -1,7 +1,7 @@
 package com.bin.ragknowledge.repository.entity;
 
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.bin.ragknowledge.enums.LlmConfigKey;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

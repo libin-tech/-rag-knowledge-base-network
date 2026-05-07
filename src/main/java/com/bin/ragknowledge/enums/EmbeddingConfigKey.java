@@ -1,40 +1,51 @@
 package com.bin.ragknowledge.enums;
 
+import com.baomidou.mybatisplus.annotation.EnumValue;
+import com.fasterxml.jackson.annotation.JsonValue;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
 /**
- * 向量嵌入配置键常量
+ * 向量嵌入配置键枚举
  * 用于统一管理Embedding配置的各项配置键
  */
-public class EmbeddingConfigKey {
+@AllArgsConstructor
+@Getter
+public enum EmbeddingConfigKey {
 
     /** 模式配置键 */
-    public static final String MODE = "mode";
+    MODE("mode"),
 
     /** DashScope API密钥 */
-    public static final String DASHSCOPE_API_KEY = "dashscope_apiKey";
+    DASHSCOPE_API_KEY("dashscope_apiKey"),
 
     /** DashScope模型名称 */
-    public static final String DASHSCOPE_MODEL_NAME = "dashscope_modelName";
+    DASHSCOPE_MODEL_NAME("dashscope_modelName"),
 
     /** Ollama服务地址 */
-    public static final String OLLAMA_BASE_URL = "ollama_baseUrl";
+    OLLAMA_BASE_URL("ollama_baseUrl"),
 
     /** Ollama模型名称 */
-    public static final String OLLAMA_MODEL_NAME = "ollama_modelName";
+    OLLAMA_MODEL_NAME("ollama_modelName"),
 
     /** Ollama超时时间 */
-    public static final String OLLAMA_TIMEOUT = "ollama_timeout";
+    OLLAMA_TIMEOUT("ollama_timeout"),
 
     /** OpenAI API密钥 */
-    public static final String OPENAI_API_KEY = "openai_apiKey";
+    OPENAI_API_KEY("openai_apiKey"),
 
     /** OpenAI服务地址 */
-    public static final String OPENAI_BASE_URL = "openai_baseUrl";
+    OPENAI_BASE_URL("openai_baseUrl"),
 
     /** OpenAI模型名称 */
-    public static final String OPENAI_MODEL_NAME = "openai_modelName";
+    OPENAI_MODEL_NAME("openai_modelName"),
 
     /** OpenAI超时时间 */
-    public static final String OPENAI_TIMEOUT = "openai_timeout";
+    OPENAI_TIMEOUT("openai_timeout");
 
-    private EmbeddingConfigKey() {}
+    @JsonValue
+    @EnumValue
+    private final String value;
+
+
 }

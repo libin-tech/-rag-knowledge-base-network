@@ -1,10 +1,37 @@
 package com.bin.ragknowledge.enums;
 
-public class ChannelType {
+import com.baomidou.mybatisplus.annotation.EnumValue;
+import com.fasterxml.jackson.annotation.JsonValue;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
-    public static final String FEISHU = "FEISHU";
-    public static final String DINGTALK = "DINGTALK";
-    public static final String WECHAT_WORK = "WECHAT_WORK";
+/**
+ * 渠道类型枚举
+ * 支持飞书、钉钉、企业微信三种渠道
+ */
+@AllArgsConstructor
+@Getter
+public enum ChannelType {
 
-    private ChannelType() {}
+    /**
+     * 飞书渠道
+     */
+    FEISHU("FEISHU", "飞书"),
+
+    /**
+     * 钉钉渠道
+     */
+    DINGTALK("DINGTALK", "钉钉"),
+
+    /**
+     * 企业微信渠道
+     */
+    WECHAT_WORK("WECHAT_WORK", "企业微信");
+
+    @JsonValue
+    @EnumValue
+    private final String code;
+    private final String desc;
+
+
 }

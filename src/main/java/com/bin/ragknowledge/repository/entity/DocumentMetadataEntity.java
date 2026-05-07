@@ -99,4 +99,13 @@ public class DocumentMetadataEntity extends BaseEntity {
      */
     @TableField("upload_time")
     private LocalDateTime uploadTime;
+
+    /**
+     * 知识库ID
+     * <p>
+     * 文档所属的知识库标识，用于按知识库进行数据隔离。
+     * </p>
+     */
+    @TableField("knowledge_base_id")
+    private String knowledgeBaseId;
 }

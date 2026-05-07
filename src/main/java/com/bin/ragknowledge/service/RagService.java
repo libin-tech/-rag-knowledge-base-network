@@ -1,10 +1,17 @@
 package com.bin.ragknowledge.service;
 
-import cn.hutool.core.date.StopWatch;
-import cn.hutool.core.util.IdUtil;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
 import com.bin.ragknowledge.config.EmbeddingModelFactory;
 import com.bin.ragknowledge.config.ModelFactory;
 import com.bin.ragknowledge.config.RagProperties;
+
+import cn.hutool.core.date.StopWatch;
+import cn.hutool.core.util.IdUtil;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.DocumentSplitter;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
@@ -12,9 +19,6 @@ import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
-import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.output.TokenUsage;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
@@ -24,12 +28,10 @@ import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingSearchResult;
 import dev.langchain4j.store.embedding.EmbeddingStore;
+import dev.langchain4j.store.embedding.filter.Filter;
+import dev.langchain4j.store.embedding.filter.MetadataFilterBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * RAG（检索增强生成）服务
@@ -39,7 +41,7 @@ import java.util.function.Consumer;
  * 检索相关文档片段，并将其作为上下文提供给大语言模型，从而生成准确的回答。
  * </p>
  *
- * <p>核���工作流程：</p>
+ * <p>核心工作流程：</p>
  * <ol>
  *   <li>文档入库：接收文档 -> 按策略分割为片段 -> 为片段生成向量 -> 存储到向量数据库</li>
  *   <li>智能问答：接收问题 -> 向量化问题 -> 在向量库中检索相关片段 -> 结合上下文调用 LLM 生成回答</li>
@@ -71,65 +73,60 @@ public class RagService {
     private final RagProperties ragProperties;
 
     /**
-     * 聊天记忆组件，用于维护对话上下文
-     * 使用 MessageWindowChatMemory 实现固定窗口大小的记忆管理，
-     * 最多保留 10 条消息，超出后自动丢弃最早的消息
+     * 添加文档到向量数据库（默认知识库）
      */
-    private ChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(10);
+    public DocumentVectorResult addDocument(Document document) {
+        return addDocument(document, "default");
+    }
 
     /**
-     * 添加文档到向量数据库
+     * 添加文档到向量数据库（指定知识库）
      * <p>
      * 工作流程：
      * 1. 文档分割：根据配置的块大小和重叠度将文档切分为多个文本片段
-     * 2. 元数据标记：为每个片段添加唯一的文档 ID，便于追溯来源
+     * 2. 元数据标记：为每个片段添加唯一的文档 ID 和知识库 ID
      * 3. 向量化处理：使用嵌入模型将所有文本片段转换为向量表示
      * 4. 持久化存储：将向量与对应的文本片段一并存入向量数据库
      * </p>
      *
      * @param document 待入库的 LangChain4j Document 对象，包含文档内容和元数据
+     * @param knowledgeBaseId 知识库ID
      */
-public DocumentVectorResult addDocument(Document document) {
-        // 根据配置参数创建文档分割器
-        // 使用递归分割策略，按配置的块大小和重叠度进行分割
+    public DocumentVectorResult addDocument(Document document, String knowledgeBaseId) {
         DocumentSplitter splitter = DocumentSplitters.recursive(
                 ragProperties.getChunk().getMaxSegmentSize(),
                 ragProperties.getChunk().getMaxOverlapSize()
         );
 
-        // 执行文档分割，获取文本片段列表
         List<TextSegment> segments = splitter.split(document);
         log.info("文档被分割为 {} 个片段", segments.size());
 
-        // 生成唯一的文档标识符，用于标记这批片段来源于同一份原始文档
         String docId = IdUtil.randomUUID();
-        // 为每个文本片段添加 doc_id 元数据，建立片段与原文件的关联关系
         for (TextSegment segment : segments) {
             segment.metadata().put("doc_id", docId);
+            segment.metadata().put("knowledge_base_id", knowledgeBaseId);
         }
 
-        // 通过工厂获取嵌入模型并批量向量化所有文本片段
         List<Embedding> embeddings = embeddingModelFactory.getEmbeddingModel().embedAll(segments).content();
-        // 将向量和对应的文本片段一并写入向量数据库
         List<String> vectorIds = embeddingStore.addAll(embeddings, segments);
 
-        log.info("文档已添加到向量数据库, docId: {}", docId);
+        log.info("文档已添加到向量数据库, docId: {}, knowledgeBaseId: {}", docId, knowledgeBaseId);
         return new DocumentVectorResult(docId, segments.size(), vectorIds);
     }
 
     /**
-     * 批量添加多个文档到向量数据库
-     * <p>
-     * 工作流程：遍历文档列表，逐个调用 addDocument 方法完成入库操作。
-     * 此方法是对 addDocument 的简单封装，便于批量操作。
-     * </p>
-     *
-     * @param documents 待入库的 Document 对象列表
+     * 批量添加多个文档到向量数据库（默认知识库）
      */
     public void addDocuments(List<Document> documents) {
-        // 逐个处理每个文档
+        addDocuments(documents, "default");
+    }
+
+    /**
+     * 批量添加多个文档到向量数据库（指定知识库）
+     */
+    public void addDocuments(List<Document> documents, String knowledgeBaseId) {
         for (Document document : documents) {
-            addDocument(document);
+            addDocument(document, knowledgeBaseId);
         }
     }
 
@@ -142,7 +139,14 @@ public DocumentVectorResult addDocument(Document document) {
     }
 
     /**
-     * 执行智能问答查询
+     * 执行智能问答查询（默认知识库）
+     */
+    public String query(String question) {
+        return query(question, "default");
+    }
+
+    /**
+     * 执行智能问答查询（指定知识库）
      * <p>
      * 工作流程：
      * 1. 构建内容检索器：基于向量数据库和嵌入模型创建检索器，配置最大返回结果数和最低相似度阈值
@@ -152,98 +156,98 @@ public DocumentVectorResult addDocument(Document document) {
      * </p>
      *
      * @param question 用户提出的问题文本
+     * @param knowledgeBaseId 知识库ID
      * @return AI 生成的回答文本
      */
-    public String query(String question) {
-        // 通过工厂获取模型
+    public String query(String question, String knowledgeBaseId) {
         var chatLanguageModel = modelFactory.getChatLanguageModel();
         var embeddingModel = embeddingModelFactory.getEmbeddingModel();
 
-        // 创建内容检索器，用于从向量数据库中检索与问题相关的文档片段
-        // maxResults: 最大返回结果数量，控制上下文的丰富度
-        // minScore: 最低相似度阈值，过滤掉相关性过低的结果
+        Filter metadataFilter = MetadataFilterBuilder.metadataKey("knowledge_base_id")
+                .isEqualTo(knowledgeBaseId);
+
         ContentRetriever retriever = EmbeddingStoreContentRetriever.builder()
                 .embeddingStore(embeddingStore)
                 .embeddingModel(embeddingModel)
                 .maxResults(ragProperties.getRetrieval().getMaxResults())
                 .minScore(ragProperties.getRetrieval().getMinScore())
+                .filter(metadataFilter)
                 .build();
 
-        // 使用 AiServices 构建 AI 助手，整合多个核心组件
+        ChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(10);
+
         Assistant assistant = AiServices.builder(Assistant.class)
-                .chatLanguageModel(chatLanguageModel)  // 设置大语言模型，负责生成最终回答
-                .chatMemory(chatMemory)                // 设置聊天记忆，维护多轮对话上下文
-                .contentRetriever(retriever)           // 设置内容检索器，提供 RAG 检索能力
+                .chatLanguageModel(chatLanguageModel)
+                .chatMemory(chatMemory)
+                .contentRetriever(retriever)
                 .build();
 
-        // 记录用户提问日志
-        log.info("用户提问: {}", question);
+        log.info("用户提问: {}, 知识库: {}", question, knowledgeBaseId);
         log.info("正在增强检索，请耐心等待...");
         StopWatch stopWatch = new StopWatch();
         stopWatch.start("rag-query");
-        // 调用 AI 助手进行对话，系统会自动完成检索-增强-生成的完整流程
-        String answer = assistant.chat(question);
+
+        String answer = assistant.chatWithContext(question, knowledgeBaseId);
+
         stopWatch.stop();
         long costTime = stopWatch.getTotalTimeMillis();
         log.info("RAG 检索增强与回答耗时: {} ms", costTime);
-        // 记录 AI 回答日志
         log.info("AI 回答: {}", answer);
 
         return answer;
     }
 
     /**
-     * 执行流式智能问答查询
-     * <p>
-     * 工作流程：
-     * 1. 构建内容检索器：基于向量数据库和嵌入模型创建检索器
-     * 2. 使用流式模型进行对话，实现打字机效果输出
-     * 3. 通过回调函数逐字返回生成的内容
-     * 4. 最终返回 token 使用统计信息
-     * </p>
-     *
-     * @param question 用户提出的问题文本
-     * @param onNext 接收每个生成文本片段的回调函数
-     * @param onComplete 完成时的回调函数，接收 token 使用统计
-     * @param onError 错误时的回调函数
+     * 执行流式智能问答查询（默认知识库）
      */
     public void queryStream(
             String question,
             Consumer<String> onNext,
             Consumer<TokenUsage> onComplete,
             Consumer<Throwable> onError) {
+        queryStream(question, "default", onNext, onComplete, onError);
+    }
+
+    /**
+     * 执行流式智能问答查询（指定知识库）
+     */
+    public void queryStream(
+            String question,
+            String knowledgeBaseId,
+            Consumer<String> onNext,
+            Consumer<TokenUsage> onComplete,
+            Consumer<Throwable> onError) {
         try {
-            // 通过工厂获取模型
             var streamingChatLanguageModel = modelFactory.getStreamingChatLanguageModel();
             var embeddingModel = embeddingModelFactory.getEmbeddingModel();
 
-            // 创建内容检索器
+            Filter metadataFilter = MetadataFilterBuilder.metadataKey("knowledge_base_id")
+                    .isEqualTo(knowledgeBaseId);
+
             ContentRetriever retriever = EmbeddingStoreContentRetriever.builder()
                     .embeddingStore(embeddingStore)
                     .embeddingModel(embeddingModel)
                     .maxResults(ragProperties.getRetrieval().getMaxResults())
                     .minScore(ragProperties.getRetrieval().getMinScore())
+                    .filter(metadataFilter)
                     .build();
 
-            // 记录用户提问日志
-            log.info("用户提问（流式）: {}", question);
+            log.info("用户提问（流式）: {}, 知识库: {}", question, knowledgeBaseId);
 
-            // 使用 AiServices 构建流式 AI 助手，整合 RAG 能力
+            ChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(10);
+
             StreamingAssistant streamingAssistant = AiServices.builder(StreamingAssistant.class)
                     .streamingChatLanguageModel(streamingChatLanguageModel)
                     .chatMemory(chatMemory)
                     .contentRetriever(retriever)
                     .build();
 
-            // 执行流式对话
-            TokenStream tokenStream = streamingAssistant.chat(question);
+            TokenStream tokenStream = streamingAssistant.chatWithContext(question, knowledgeBaseId);
 
-            // 每次生成一个 token 时调用回调
             tokenStream.onNext(onNext).onComplete((response) -> {
-                // 完成时记录 token 使用统计
                 TokenUsage tokenUsage = response.tokenUsage();
                 log.info("AI 回答完成（流式），Token 使用: {}", tokenUsage);
-                log.info("Token 详情 - inputTokenCount: {}, outputTokenCount: {}, totalTokenCount: {}", 
+                log.info("Token 详情 - inputTokenCount: {}, outputTokenCount: {}, totalTokenCount: {}",
                         tokenUsage != null ? tokenUsage.inputTokenCount() : "null",
                         tokenUsage != null ? tokenUsage.outputTokenCount() : "null",
                         tokenUsage != null ? tokenUsage.totalTokenCount() : "null");
@@ -251,12 +255,10 @@ public DocumentVectorResult addDocument(Document document) {
                     onComplete.accept(tokenUsage);
                 } else {
                     log.warn("tokenUsage 为 null，使用默认值");
-                    // 如果为 null，创建一个默认的 TokenUsage
                     TokenUsage defaultUsage = new TokenUsage(0, 0, 0);
                     onComplete.accept(defaultUsage);
                 }
             }).onError((error) -> {
-                // 错误时记录日志并回调
                 log.error("流式生成出错", error);
                 onError.accept(error);
             }).start();
@@ -266,90 +268,65 @@ public DocumentVectorResult addDocument(Document document) {
         }
     }
 
-    /**
-     * 清空向量数据库
-     * <p>
-     * 注意：当前实现仅记录日志，实际清空操作取决于底层向量数据库的支持。
-     * 以 Milvus 为例，不支持直接清空集合中的全部数据，通常需要删除集合后重建。
-     * 此方法预留接口，后续可根据实际需求完善具体实现。
-     * </p>
-     */
     public void clearStore() {
-        // Milvus 不支持直接清空，需要删除集合后重建
         log.info("向量数据库清空完成");
     }
 
     /**
-     * 检索与查询相关的文档片段
-     * <p>
-     * 工作流程：
-     * 1. 将查询文本向量化，得到查询向量
-     * 2. 构建搜索请求，设置最大结果数和最低相似度阈值
-     * 3. 在向量数据库中执行相似度搜索
-     * 4. 提取搜索结果中的文本片段并返回列表
-     * </p>
-     * <p>
-     * 此方法通常用于调试或预览检索效果，不直接调用 LLM 生成回答。
-     * </p>
-     *
-     * @param query 查询文本，用于在向量数据库中检索相关片段
-     * @return 与查询最相关的 TextSegment 列表，按相关性降序排列
+     * 检索与查询相关的文档片段（默认知识库）
      */
     public List<TextSegment> retrieveRelevantDocuments(String query) {
-        // 通过工厂获取嵌入模型
+        return retrieveRelevantDocuments(query, "default");
+    }
+
+    /**
+     * 检索与查询相关的文档片段（指定知识库）
+     */
+    public List<TextSegment> retrieveRelevantDocuments(String query, String knowledgeBaseId) {
         var embeddingModel = embeddingModelFactory.getEmbeddingModel();
 
-        // 将查询文本通过嵌入模型转换为向量表示
         Embedding queryEmbedding = embeddingModel.embed(query).content();
 
-        // 构建向量搜索请求，配置搜索参数
+        // 构建元数据过滤器
+        var filter = MetadataFilterBuilder.metadataKey("knowledge_base_id")
+                .isEqualTo(knowledgeBaseId);
+
         EmbeddingSearchRequest request = EmbeddingSearchRequest.builder()
-                .queryEmbedding(queryEmbedding)                              // 设置查询向量
-                .maxResults(ragProperties.getRetrieval().getMaxResults())   // 设置最大返回数量
-                .minScore(ragProperties.getRetrieval().getMinScore())       // 设置最低相似度阈值
+                .queryEmbedding(queryEmbedding)
+                .maxResults(ragProperties.getRetrieval().getMaxResults())
+                .minScore(ragProperties.getRetrieval().getMinScore())
+                .filter(filter)
                 .build();
 
-        // 在向量存储中执行相似度搜索
         EmbeddingSearchResult<TextSegment> result = embeddingStore.search(request);
-        // 从搜索结果中提取嵌入的文本片段，转换为列表返回
+
         return result.matches().stream()
                 .map(EmbeddingMatch::embedded)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     /**
      * AI 助手接口定义
-     * <p>
-     * 该接口由 LangChain4j 的 AiServices 动态代理实现，
-     * 开发者只需定义方法签名，框架会自动完成检索增强和对话管理的完整流程。
-     * </p>
      */
     public interface Assistant {
-        /**
-         * 与 AI 助手进行单轮对话
-         *
-         * @param userMessage 用户输入的消息文本
-         * @return AI 生成的回答文本
-         */
         String chat(String userMessage);
+
+        @dev.langchain4j.service.SystemMessage("你是一个智能知识库问答助手。请根据提供的上下文信息回答用户的问题。如果没有相关信息，请明确说明。")
+        @dev.langchain4j.service.UserMessage("知识库ID: {{knowledgeBaseId}}\n问题: {{question}}")
+        String chatWithContext(@dev.langchain4j.service.V("question") String question,
+                               @dev.langchain4j.service.V("knowledgeBaseId") String knowledgeBaseId);
     }
 
     /**
      * 流式 AI 助手接口定义
-     * <p>
-     * 该接口用于支持流式输出，实现打字机效果。
-     * LangChain4j 的 AiServices 会自动代理此接口，
-     * 整合 RAG 检索、对话记忆和流式生成功能。
-     * </p>
      */
     public interface StreamingAssistant {
-        /**
-         * 与 AI 助手进行流式对话
-         *
-         * @param userMessage 用户输入的消息文本
-         * @return TokenStream 用于接收流式生成的内容
-         */
         TokenStream chat(String userMessage);
+
+        @dev.langchain4j.service.SystemMessage("你是一个智能知识库问答助手。请根据提供的上下文信息回答用户的问题。如果没有相关信息，请明确说明。")
+        @dev.langchain4j.service.UserMessage("知识库ID: {{knowledgeBaseId}}\n问题: {{question}}")
+        TokenStream chatWithContext(@dev.langchain4j.service.V("question") String question,
+                                    @dev.langchain4j.service.V("knowledgeBaseId") String knowledgeBaseId);
     }
 
     public record DocumentVectorResult(String vectorDocId, int segmentCount, List<String> vectorIds) {

@@ -14,6 +14,7 @@ A LangChain4j-based RAG (Retrieval-Augmented Generation) knowledge base system w
 - **Observability**: key-stage logging with retrieval-enhancement timing
 - **Model configuration**: real-time LLM/Embedding config via admin UI
 - **Message channels**: enable/disable Feishu and DingTalk robots
+- **Knowledge base management**: create, enable/disable, switch multiple knowledge bases
 
 ## Tech Stack
 
@@ -31,7 +32,12 @@ src/main/java/com/bin/ragknowledge/
 ├── controller/     # Page and API controllers
 ├── service/       # Core business logic
 ├── repository/    # Data access layer
+│   ├── mapper/   # Mapper interfaces
+│   └── entity/   # Entity classes (DO)
 ├── config/       # Configuration classes
+├── filter/       # Filters
+├── interceptor/  # Interceptors
+├── context/      # Context (ThreadLocal, etc.)
 └── enums/        # Enum constants
 ```
 
@@ -84,11 +90,20 @@ Access `/admin` to enter the admin panel:
 
 | Page | Path | Description |
 |------|------|------------|
+| Knowledge Base | `/admin/knowledge-base` | create, enable/disable, switch knowledge bases |
 | Document Upload | `/admin/upload` | PDF upload and parsing |
 | Document Management | `/admin/documents` | uploaded document list |
 | Q&A Test | `/admin/chat` | RAG Q&A testing |
 | Model Config | `/admin/config` | LLM/Embedding config |
 | Message Channel | `/admin/channel` | Feishu/DingTalk config |
+
+### Knowledge Base Management
+
+Access `/admin/knowledge-base` to manage knowledge bases:
+
+- **Create knowledge base**: custom name and description
+- **Enable/disable**: control knowledge base status
+- **Default knowledge base**: built-in default knowledge base (ID: default)
 
 ### Model Configuration
 
@@ -125,6 +140,10 @@ Admin path: `/admin`
 
 | API | Method | Description |
 |------|-------|------------|
+| `/admin/api/knowledge-base/list` | GET | knowledge base list |
+| `/admin/api/knowledge-base` | POST | create knowledge base |
+| `/admin/api/knowledge-base/{id}` | PUT | update knowledge base |
+| `/admin/api/knowledge-base/{id}` | DELETE | delete knowledge base |
 | `/admin/api/query/stream` | POST | streaming Q&A (SSE) |
 | `/admin/api/documents` | GET | document list |
 | `/admin/api/document/{id}` | DELETE | delete document |

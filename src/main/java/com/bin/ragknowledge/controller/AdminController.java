@@ -123,6 +123,17 @@ public class AdminController {
     }
 
     /**
+     * 知识库管理页面
+     * 用于管理知识库的增删改查
+     *
+     * @return 知识库管理页面的视图名称
+     */
+    @GetMapping("/knowledge-base")
+    public String knowledgeBasePage() {
+        return "admin/knowledge-base";
+    }
+
+    /**
      * 上传 PDF 文档 (API)
      * 接收单个 PDF 文件，解析后添加到向量数据库中，支持后续的 RAG 检索问答
      *
@@ -131,9 +142,11 @@ public class AdminController {
      */
     @PostMapping("/api/upload")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> uploadPdf(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<Map<String, Object>> uploadPdf(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "knowledgeBaseId", defaultValue = "default") String knowledgeBaseId) {
         try {
-            return handleSingleUpload(file);
+            return handleSingleUpload(file, knowledgeBaseId);
         } catch (Exception e) {
             log.error("上传 PDF 失败", e);
             return ResponseEntity.internalServerError().body(Map.of(
@@ -153,7 +166,8 @@ public class AdminController {
     @PostMapping("/api/upload/batch")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> uploadMultiplePdfs(
-            @RequestParam("files") List<MultipartFile> files) {
+            @RequestParam("files") List<MultipartFile> files,
+            @RequestParam(value = "knowledgeBaseId", defaultValue = "default") String knowledgeBaseId) {
         try {
             if (files == null || files.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
@@ -167,7 +181,7 @@ public class AdminController {
             List<String> errors = new ArrayList<>();
             for (MultipartFile file : files) {
                 try {
-                    ResponseEntity<Map<String, Object>> result = handleSingleUpload(file);
+                    ResponseEntity<Map<String, Object>> result = handleSingleUpload(file, knowledgeBaseId);
                     if (result.getStatusCode().is2xxSuccessful()) {
                         successCount++;
                     } else {
@@ -210,6 +224,7 @@ public class AdminController {
     public ResponseEntity<Map<String, Object>> query(@RequestBody Map<String, String> request) {
         try {
             String question = request.get("question");
+            String knowledgeBaseId = request.getOrDefault("knowledgeBaseId", "default");
             if (question == null || question.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
                         "success", false,
@@ -217,7 +232,7 @@ public class AdminController {
                 ));
             }
 
-            String answer = ragService.query(question);
+            String answer = ragService.query(question, knowledgeBaseId);
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "answer", answer
@@ -244,6 +259,7 @@ public class AdminController {
     public SseEmitter queryStream(@RequestBody Map<String, String> request) {
         SseEmitter emitter = new SseEmitter(60 * 1000L);
         String question = request.get("question");
+        String knowledgeBaseId = request.getOrDefault("knowledgeBaseId", "default");
 
         if (question == null || question.isEmpty()) {
             try {
@@ -261,6 +277,7 @@ public class AdminController {
 
         ragService.queryStream(
                 question,
+                knowledgeBaseId,
                 (text) -> {
                     try {
                         fullAnswer.append(text);
@@ -319,11 +336,16 @@ public class AdminController {
     @ResponseBody
     public ResponseEntity<Map<String, Object>> getDocuments(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String knowledgeBaseId) {
         int currentPage = Math.max(page, 1);
         int pageSize = Math.min(Math.max(size, 1), 100);
-        com.baomidou.mybatisplus.extension.plugins.pagination.Page<DocumentMetadataEntity> resultPage =
-                documentMetadataService.page(currentPage, pageSize);
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<DocumentMetadataEntity> resultPage;
+        if (knowledgeBaseId != null && !knowledgeBaseId.isEmpty()) {
+            resultPage = documentMetadataService.pageByKnowledgeBaseId(currentPage, pageSize, knowledgeBaseId);
+        } else {
+            resultPage = documentMetadataService.page(currentPage, pageSize);
+        }
         List<Map<String, Object>> records = resultPage.getRecords().stream()
                 .map(this::toDocumentResponse)
                 .toList();
@@ -412,7 +434,7 @@ public class AdminController {
         }
     }
 
-    private ResponseEntity<Map<String, Object>> handleSingleUpload(MultipartFile file) throws Exception {
+    private ResponseEntity<Map<String, Object>> handleSingleUpload(MultipartFile file, String knowledgeBaseId) throws Exception {
         if (file == null || file.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
@@ -427,7 +449,7 @@ public class AdminController {
             ));
         }
         var document = documentService.parsePdf(file);
-        RagService.DocumentVectorResult vectorResult = ragService.addDocument(document);
+        RagService.DocumentVectorResult vectorResult = ragService.addDocument(document, knowledgeBaseId);
 
         String documentId = UUID.randomUUID().toString();
         String objectKey = "documents/" + documentId + "/" + filename;
@@ -443,6 +465,7 @@ public class AdminController {
         entity.setSegmentCount(vectorResult.segmentCount());
         entity.setVectorIds(objectMapper.writeValueAsString(vectorResult.vectorIds()));
         entity.setUploadTime(LocalDateTime.now());
+        entity.setKnowledgeBaseId(knowledgeBaseId);
         documentMetadataService.save(entity);
 
         return ResponseEntity.ok(Map.of(
