@@ -162,6 +162,7 @@ Admin path: `/admin`
 ## Web Screenshots
 
 ![Login Page](images/login_img.png)
+![Knowledge](images/knowledge_img.png)
 ![Document Upload Page](images/upload_img.png)
 ![Document Management Page](images/doc_mng.png)
 ![Q&A Test Page](images/question_img.png)

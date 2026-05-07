@@ -20,7 +20,7 @@
     <!-- 项目基本信息：RAG企业知识库问答系统 -->
     <groupId>com.rag</groupId>
     <artifactId>rag-knowledge-base</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <name>rag-knowledge-base</name>
     <description>RAG企业知识库问答系统</description>
 
