@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <!-- Spring Boot 自带色彩支持的配置 -->
     <property name="CONSOLE_PATTERN"
@@ -45,7 +45,7 @@
     </root>
 
     <!-- 应用日志 -->
-    <logger name="com.bin.ragknowledge" level="DEBUG"/>
+    <logger name="com.bintech.rag" level="DEBUG"/>
 
     <!-- 第三方库日志降级 -->
     <logger name="dev.langchain4j" level="INFO"/>

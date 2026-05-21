@@ -18,30 +18,64 @@
 
 ## 技术栈
 
+### 后端
 - Java 21
 - Spring Boot 4.0.5
+- Sa-Token 1.36.0（认证授权）
 - LangChain4j 0.36.2
+- MyBatis-Plus 3.5.15
+- PostgreSQL
 - Milvus 2.4.x
 - Hutool 5.8.x
+
+### 前端
+- Vue 3
+- Ant Design Vue 4
+- Vite 5
+- Axios
+- Marked.js + Highlight.js
+
+### 部署
 - Docker / Docker Compose
 
 ## 项目结构
 
 ```
-src/main/java/com/bin/ragknowledge/
-├── controller/     # 页面与 API 控制器
-├── service/       # 核心业务逻辑
-├── repository/    # 数据访问层
-│   ├── mapper/   # Mapper 接口
-│   └── entity/   # 实体类（DO）
-├── config/       # 配置类
-├── filter/       # 过滤器
-├── interceptor/  # 拦截器
-├── context/      # 上下文（ThreadLocal等）
-└── enums/        # 枚举常量
+rag-knowledge-base-network/
+├── frontend/                              # Vue 3 前端项目
+│   ├── src/
+│   │   ├── api/                          # API 请求层 (Axios + Sa-Token 拦截)
+│   │   ├── router/                       # 路由配置（含登录守卫）
+│   │   └── views/
+│   │       ├── Login.vue                 # 登录页
+│   │       └── admin/
+│   │           ├── Layout.vue            # 后台布局（侧边栏 + 顶栏）
+│   │           ├── Upload.vue            # 文档上传
+│   │           ├── Documents.vue         # 文档管理
+│   │           ├── Chat.vue              # 问答测试（SSE 流式）
+│   │           ├── Config.vue            # 模型配置
+│   │           ├── Channel.vue           # 消息渠道
+│   │           └── KnowledgeBase.vue     # 知识库管理
+│   ├── package.json
+│   └── vite.config.js
+│
+├── src/main/java/com/bin/ragknowledge/
+│   ├── controller/     # API 控制器
+│   ├── service/        # 核心业务逻辑
+│   ├── repository/     # 数据访问层
+│   │   ├── mapper/    # Mapper 接口
+│   │   └── entity/    # 实体类（DO）
+│   ├── config/        # 配置类（含 Sa-Token 配置）
+│   ├── context/       # 上下文
+│   └── enums/         # 枚举常量
+│
+└── src/main/resources/
+    ├── application.yml       # 系统配置
+    └── static/               # 前端构建产物（Vue build 输出目录）
 ```
 
 核心资源：
+- `frontend/`：Vue 3 前端源码，构建后输出至 `src/main/resources/static/`
 - `src/main/resources/application.yml`：系统配置
 - `docker-compose.yml`：Milvus + MinIO + Etcd + 应用一体化编排
 
@@ -51,10 +85,11 @@ src/main/java/com/bin/ragknowledge/
 
 1. 准备 `.env` 文件（可参考 `.env.example`）
 2. 配置环境变量
-3. 启动服务：
+3. 构建前端：`cd frontend && npm install && npm run build`
+4. 启动服务：
    - Windows：`start.bat`
    - macOS/Linux：`docker-compose up -d`
-4. 访问应用：`http://localhost:8080`
+5. 访问应用：`http://localhost:8080`
 
 停止服务：
 - Windows：`stop.bat`
@@ -65,14 +100,24 @@ src/main/java/com/bin/ragknowledge/
 前提条件：
 - 已安装 Java 21
 - 已安装 Maven
+- 已安装 Node.js 18+
 - 已准备可访问的 Milvus 与模型服务
 
 步骤：
-1. 构建项目：`mvn clean package -DskipTests`
-2. 启动应用：`java -jar target/rag-knowledge-base-1.0.0.jar`
-3. 停止应用：`停掉进程即可`
+1. 构建前端：`cd frontend && npm install && npm run build`
+2. 构建后端：`mvn clean package -DskipTests`
+3. 启动应用：`java -jar target/rag-knowledge-base-1.1.0.jar`
+4. 停止应用：`停掉进程即可`
+
+### 方式三：前端开发模式（前后端分离）
+
+1. 启动后端：`mvn spring-boot:run`
+2. 启动前端开发服务器：`cd frontend && npm run dev`
+3. 访问 `http://localhost:3000`，API 请求自动代理至后端 8080 端口
 
 ## 核心配置说明
+
+### 后端配置
 
 配置文件：`src/main/resources/application.yml`
 
@@ -83,19 +128,55 @@ src/main/java/com/bin/ragknowledge/
 | `rag.chunk.max-overlap-size` | 分块重叠 |
 | `rag.retrieval.max-results` | 检索返回条数 |
 | `rag.retrieval.min-score` | 检索最低相似度阈值 |
+| `auth.admin-username` | 管理员用户名 |
+| `auth.admin-password` | 管理员密码 |
+
+### 认证方式
+
+系统使用 **Sa-Token** 进行认证，采用令牌（Token）机制：
+
+- 前端调用 `POST /api/auth/login` 获取令牌
+- 令牌通过 **Authorization** 请求头发送
+- 令牌默认有效期：24 小时（可配置）
+- 活跃超时：30 分钟（无操作后需重新登录）
+
+Sa-Token 配置说明（`application.yml` 中 `sa-token` 前缀）：
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| `token-name` | `Authorization` | 令牌名称（请求头名称） |
+| `timeout` | `86400` | 令牌有效期（秒） |
+| `activity-timeout` | `1800` | 活跃超时（秒） |
+| `is-concurrent` | `true` | 是否允许同一账号并发登录 |
+| `is-read-head` | `true` | 是否从请求头读取令牌 |
+| `is-read-cookie` | `false` | 不从 Cookie 读取令牌 |
+
+### .env 配置
+
+参考 `.env.example` 文件，包含所有必须的环境变量：
+
+| 变量 | 说明 |
+|------|------|
+| `POSTGRES_*` | PostgreSQL 数据库连接 |
+| `MILVUS_*` | Milvus 向量数据库连接 |
+| `MINIO_*` | MinIO 文件存储 |
+| `ADMIN_USERNAME` | 管理员用户名（默认：admin） |
+| `ADMIN_PASSWORD` | 管理员密码（默认：admin@2026） |
+
+> 建议使用环境变量覆盖敏感配置，不要将真实密钥提交到仓库。
 
 ## 管理后台
 
-访问 `/admin` 进入管理后台：
+访问 `http://localhost:8080/login` 进入登录页，登录后进入管理后台：
 
 | 页面 | 路径 | 说明 |
 |------|------|------|
-| 知识库管理 | `/admin/knowledge-base` | 知识库创建、启用/停用、切换 |
 | 文档上传 | `/admin/upload` | PDF 文档上传与解析 |
 | 文档管理 | `/admin/documents` | 已上传文档列表与删除 |
-| 问答测试 | `/admin/chat` | RAG 问答测试 |
+| 问答测试 | `/admin/chat` | RAG 问答测试（SSE 流式） |
 | 模型配置 | `/admin/config` | LLM/Embedding 模型配置 |
 | 消息渠道 | `/admin/channel` | 飞书/钉钉机器人配置 |
+| 知识库管理 | `/admin/knowledge-base` | 知识库创建、启用/停用、切换 |
 
 ### 知识库管理
 
@@ -123,9 +204,17 @@ src/main/java/com/bin/ragknowledge/
 
 支持启用/停用，配置保存后自动生效。
 
-> 建议使用环境变量覆盖敏感配置，不要将真实密钥提交到仓库。
-
 ## 接口说明
+
+### 认证接口
+
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/auth/login` | POST | 登录，返回令牌 |
+| `/api/auth/logout` | GET | 登出 |
+| `/api/auth/info` | GET | 获取当前用户信息 |
+
+### 开放接口
 
 基础路径：`/api`
 
@@ -136,7 +225,9 @@ src/main/java/com/bin/ragknowledge/
 | `/api/query` | POST | 非流式问答 |
 | `/api/health` | GET | 健康检查 |
 
-管理后台路径：`/admin`
+### 管理后台接口
+
+基础路径：`/admin`
 
 | 接口 | 方法 | 说明 |
 |------|------|------|
@@ -147,10 +238,13 @@ src/main/java/com/bin/ragknowledge/
 | `/admin/api/query/stream` | POST | 流式问答（SSE） |
 | `/admin/api/documents` | GET | 文档列表 |
 | `/admin/api/document/{id}` | DELETE | 删除文档 |
+| `/admin/api/document/{id}/preview` | GET | 预览文档 |
 | `/admin/api/config/llm` | GET/PUT | LLM 配置 |
 | `/admin/api/config/embedding` | GET/PUT | Embedding 配置 |
 | `/admin/api/channel/list` | GET | 消息渠道列表 |
-| `/admin/api/channel/{type}` | PUT | 更新消息渠道 |
+| `/admin/api/channel/{type}` | GET/PUT | 消息渠道详情/更新 |
+
+> 管理后台接口需要携带 Authorization 请求头进行认证。
 
 ## 常见问题
 
@@ -158,23 +252,23 @@ src/main/java/com/bin/ragknowledge/
 - **回答速度慢**：可降低检索结果数量，或切换更快的模型。
 - **Docker 启动失败**：先执行 `docker-compose logs -f` 查看依赖服务是否健康。
 - **模型配置不生效**：确认保存后刷新页面，必要时重新启动应用。
+- **登录提示"未登录"**：检查前端是否已将令牌正确发送至后端，确认令牌未过期。
 
 ## Web 效果图
 
-![登录页](images/login_img.png)
-![知识库管理](images/knowledge_img.png)
-![文档上传页](images/upload_img.png)
-![文档管理页](images/doc_mng.png)
-![问答测试页](images/question_img.png)
-![模型配置页](images/LLM_CONFIG_img.png)
-![消息渠道页](images/channel_img.png)
+![登录页](.doc/images/login_img.png)
+![知识库管理](.doc/images/knowledge_img.png)
+![文档上传页](.doc/images/upload_img.png)
+![文档管理页](.doc/images/doc_mng.png)
+![问答测试页](.doc/images/question_img.png)
+![模型配置页](.doc/images/LLM_CONFIG_img.png)
+![消息渠道页](.doc/images/channel_img.png)
 
 
 ## 飞书机器人效果图
 
-![飞书机器人](images/feishu_img.png)
+![飞书机器人](.doc/images/feishu_img.png)
 
 ## 钉钉机器人效果图
 
-![钉钉机器人](images/dingtalk_img.png)
-
+![钉钉机器人](.doc/images/dingtalk_img.png)

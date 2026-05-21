@@ -1,52 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-    RAG企业知识库问答系统 - Maven项目配置文件
-    定义项目依赖、构建配置和插件设置
--->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- Spring Boot父项目，提供依赖管理和默认配置 -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.5</version>
+        <version>4.0.6</version>
         <relativePath/>
     </parent>
 
-    <!-- 项目基本信息：RAG企业知识库问答系统 -->
-    <groupId>com.rag</groupId>
-    <artifactId>rag-knowledge-base</artifactId>
-    <version>1.1.0</version>
+    <groupId>com.bintech</groupId>
+    <artifactId>rag</artifactId>
+    <version>1.2.0</version>
     <name>rag-knowledge-base</name>
     <description>RAG企业知识库问答系统</description>
 
-    <!-- 依赖版本管理属性 -->
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <!-- Java版本：使用Java 21 -->
         <java.version>21</java.version>
-        <!-- LangChain4j框架版本：用于LLM应用开发 -->
         <langchain4j.version>0.36.2</langchain4j.version>
-        <!-- Hutool工具库版本 -->
-        <hutool.version>5.8.38</hutool.version>
-        <!-- 飞书SDK版本 -->
+        <hutool.version>5.8.44</hutool.version>
         <oapi-sdk.version>2.4.21</oapi-sdk.version>
-        <!-- FastJSON2版本：高性能JSON处理 -->
         <fastjson2.version>2.0.61</fastjson2.version>
-        <!-- Protocol Buffers版本：序列化协议 -->
         <protobuf.version>3.25.5</protobuf.version>
-        <!-- 钉钉Stream版本：钉钉消息流处理 -->
         <dingtalk-stream.version>1.3.12</dingtalk-stream.version>
-        <!-- 钉钉SDK版本：阿里云钉钉API -->
         <aliyun.dingtalk.version>2.0.76</aliyun.dingtalk.version>
+        <satoken.version>1.45.0</satoken.version>
+        <mybatis-plus.version>3.5.16</mybatis-plus.version>
+        <minio.version>9.0.0</minio.version>
     </properties>
-
-    <!-- ... existing code ... -->
 
     <dependencies>
 
@@ -55,66 +41,35 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-        <!-- ==================== Spring Boot 核心依赖 ==================== -->
-
-        <!-- ... existing code ... -->
-
-        <!-- Spring Boot Web：提供 RESTful API 和 Web 功能 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Spring Boot Security：安全认证和授权 -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
-
-        <!-- Spring Boot Thymeleaf：服务端模板引擎 -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-thymeleaf</artifactId>
-        </dependency>
-
-        <!-- Mybatis-Plus：强大的ORM框架 -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-spring-boot4-starter</artifactId>
-            <version>3.5.15</version>
+            <version>${mybatis-plus.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-jsqlparser-4.9</artifactId>
-            <version>3.5.15</version>
+            <version>${mybatis-plus.version}</version>
         </dependency>
 
-
-
-        <!-- Thymeleaf Spring Security 集成：支持在模板中使用安全标签 -->
         <dependency>
-            <groupId>org.thymeleaf.extras</groupId>
-            <artifactId>thymeleaf-extras-springsecurity6</artifactId>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-spring-boot3-starter</artifactId>
+            <version>${satoken.version}</version>
         </dependency>
 
-        <!-- ==================== LangChain4j RAG 框架依赖 ==================== -->
-
-        <!-- LangChain4j 核心库：提供 LLM 应用开发的基础能力 -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j</artifactId>
             <version>${langchain4j.version}</version>
         </dependency>
 
-        <!-- LangChain4j Spring Boot Starter：Spring Boot 自动配置支持 -->
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-spring-boot-starter</artifactId>
-            <version>${langchain4j.version}</version>
-        </dependency>
-
-        <!-- 阿里云 DashScope 集成：通义千问等模型支持 -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-dashscope</artifactId>
@@ -127,74 +82,54 @@
             </exclusions>
         </dependency>
 
-        <!-- Ollama 集成：本地大语言模型支持 -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-ollama</artifactId>
             <version>${langchain4j.version}</version>
         </dependency>
 
-        <!-- OpenAI 集成：OpenAI协议模型支持 -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-open-ai</artifactId>
             <version>${langchain4j.version}</version>
         </dependency>
 
-        <!-- Milvus 向量数据库：用于存储和检索文档向量 -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-milvus</artifactId>
             <version>${langchain4j.version}</version>
         </dependency>
 
-        <!-- PDF 文档解析器：基于 Apache PDFBox 提取 PDF 文本 -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-document-parser-apache-pdfbox</artifactId>
             <version>${langchain4j.version}</version>
         </dependency>
 
-        <!-- 本地 Embedding 模型：文本向量化处理 -->
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-embeddings</artifactId>
-            <version>${langchain4j.version}</version>
-        </dependency>
-
-        <!-- ==================== 工具类库 ==================== -->
-
-        <!-- Lombok：简化 Java 代码（@Data, @Builder 等注解） -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
 
-        <!-- Hutool：Java 工具类库，提供常用工具方法 -->
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
             <version>${hutool.version}</version>
         </dependency>
 
-        <!-- Google Protocol Buffers：序列化协议支持 -->
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
             <version>${protobuf.version}</version>
         </dependency>
 
-        <!-- ==================== 飞书集成 ==================== -->
-
-        <!-- 飞书开放平台 SDK：实现飞书机器人、消息收发等功能 -->
         <dependency>
             <groupId>com.larksuite.oapi</groupId>
             <artifactId>oapi-sdk</artifactId>
             <version>${oapi-sdk.version}</version>
         </dependency>
 
-        <!-- FastJSON2：高性能 JSON 处理库 -->
         <dependency>
             <groupId>com.alibaba.fastjson2</groupId>
             <artifactId>fastjson2</artifactId>
@@ -204,7 +139,7 @@
         <dependency>
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
-            <version>9.0.0</version>
+            <version>${minio.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>log4j</groupId>
@@ -214,54 +149,48 @@
         </dependency>
 
         <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
 
-        <!-- ==================== 配置与测试 ==================== -->
-
-        <!-- Spring Boot Configuration Processor：IDE 配置元数据支持 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
         </dependency>
 
-        <!-- Spring Boot Test：单元测试和集成测试支持 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <!-- 钉钉Stream SDK：支持钉钉卡片消息和事件订阅 -->
         <dependency>
             <groupId>com.dingtalk.open</groupId>
             <artifactId>dingtalk-stream</artifactId>
             <version>${dingtalk-stream.version}</version>
         </dependency>
 
-        <!-- 阿里云钉钉SDK：提供钉钉API调用能力 -->
         <dependency>
             <groupId>com.aliyun</groupId>
             <artifactId>dingtalk</artifactId>
             <version>${aliyun.dingtalk.version}</version>
         </dependency>
 
-
-
     </dependencies>
 
-    <!-- 构建配置：定义编译和打包插件 -->
     <build>
         <plugins>
-            <!-- Spring Boot Maven插件：支持可执行JAR包打包 -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <!-- 排除Lombok依赖，避免打包到最终产物 -->
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
@@ -270,13 +199,11 @@
                     </excludes>
                 </configuration>
             </plugin>
-            <!-- Maven编译器插件：指定Java编译版本 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
-                    <!-- 源代码和目标代码均使用Java 21 -->
                     <source>21</source>
                     <target>21</target>
                 </configuration>
