@@ -83,7 +83,6 @@ services:
   # RAG 知识库应用
   rag-knowledge-base:
     build:
-      context: ./backend
       dockerfile: Dockerfile
     container_name: rag-knowledge-base
     restart: always
