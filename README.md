@@ -42,41 +42,51 @@
 
 ```
 rag-knowledge-base-network/
+├── backend/                                # Spring Boot 后端
+│   ├── src/main/java/com/bintech/rag/
+│   │   ├── controller/                    # API 控制器
+│   │   ├── service/                       # 核心业务逻辑
+│   │   │   ├── dingtalk/                  # 钉钉集成
+│   │   │   └── feishu/                    # 飞书集成
+│   │   ├── repository/                    # 数据访问层
+│   │   │   ├── mapper/                    # Mapper 接口
+│   │   │   └── entity/                    # 实体类（DO）
+│   │   ├── config/                        # 配置类（含 Sa-Token 配置）
+│   │   ├── context/                       # 上下文
+│   │   └── enums/                         # 枚举常量
+│   ├── src/main/resources/
+│   │   ├── application.yml                # 系统配置
+│   │   └── static/                        # 前端构建产物
+│   ├── pom.xml                            # Maven 配置
+│   └── Dockerfile                         # 后端容器构建
+│
 ├── frontend/                              # Vue 3 前端项目
 │   ├── src/
-│   │   ├── api/                          # API 请求层 (Axios + Sa-Token 拦截)
-│   │   ├── router/                       # 路由配置（含登录守卫）
+│   │   ├── api/                           # API 请求层 (Axios + Sa-Token 拦截)
+│   │   ├── router/                        # 路由配置（含登录守卫）
 │   │   └── views/
-│   │       ├── Login.vue                 # 登录页
+│   │       ├── Login.vue                  # 登录页
 │   │       └── admin/
-│   │           ├── Layout.vue            # 后台布局（侧边栏 + 顶栏）
-│   │           ├── Upload.vue            # 文档上传
-│   │           ├── Documents.vue         # 文档管理
-│   │           ├── Chat.vue              # 问答测试（SSE 流式）
-│   │           ├── Config.vue            # 模型配置
-│   │           ├── Channel.vue           # 消息渠道
-│   │           └── KnowledgeBase.vue     # 知识库管理
+│   │           ├── Layout.vue             # 后台布局（侧边栏 + 顶栏）
+│   │           ├── Upload.vue             # 文档上传
+│   │           ├── Documents.vue          # 文档管理
+│   │           ├── Chat.vue               # 问答测试（SSE 流式）
+│   │           ├── Config.vue             # 模型配置
+│   │           ├── Channel.vue            # 消息渠道
+│   │           └── KnowledgeBase.vue      # 知识库管理
 │   ├── package.json
 │   └── vite.config.js
 │
-├── src/main/java/com/bin/ragknowledge/
-│   ├── controller/     # API 控制器
-│   ├── service/        # 核心业务逻辑
-│   ├── repository/     # 数据访问层
-│   │   ├── mapper/    # Mapper 接口
-│   │   └── entity/    # 实体类（DO）
-│   ├── config/        # 配置类（含 Sa-Token 配置）
-│   ├── context/       # 上下文
-│   └── enums/         # 枚举常量
-│
-└── src/main/resources/
-    ├── application.yml       # 系统配置
-    └── static/               # 前端构建产物（Vue build 输出目录）
+├── .doc/
+│   └── db/                                # 数据库脚本
+├── docker-compose.yml                     # 容器编排
+├── AGENTS.md                              # 项目通用规范
+└── CLAUDE.md                              # 子规范引用清单
 ```
 
 核心资源：
-- `frontend/`：Vue 3 前端源码，构建后输出至 `src/main/resources/static/`
-- `src/main/resources/application.yml`：系统配置
+- `frontend/`：Vue 3 前端源码，构建后输出至 `backend/src/main/resources/static/`
+- `backend/src/main/resources/application.yml`：系统配置
 - `docker-compose.yml`：Milvus + MinIO + Etcd + 应用一体化编排
 
 ## 快速开始
@@ -105,13 +115,13 @@ rag-knowledge-base-network/
 
 步骤：
 1. 构建前端：`cd frontend && npm install && npm run build`
-2. 构建后端：`mvn clean package -DskipTests`
-3. 启动应用：`java -jar target/rag-knowledge-base-1.1.0.jar`
+2. 构建后端：`cd backend && mvn clean package -DskipTests`
+3. 启动应用：`java -jar backend/target/rag-1.2.0.jar`
 4. 停止应用：`停掉进程即可`
 
 ### 方式三：前端开发模式（前后端分离）
 
-1. 启动后端：`mvn spring-boot:run`
+1. 启动后端：`cd backend && mvn spring-boot:run`
 2. 启动前端开发服务器：`cd frontend && npm run dev`
 3. 访问 `http://localhost:3000`，API 请求自动代理至后端 8080 端口
 
@@ -119,7 +129,7 @@ rag-knowledge-base-network/
 
 ### 后端配置
 
-配置文件：`src/main/resources/application.yml`
+配置文件：`backend/src/main/resources/application.yml`
 
 | 配置项 | 说明 |
 |--------|------|

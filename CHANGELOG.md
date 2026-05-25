@@ -2,6 +2,19 @@
 
 本文档记录系统的主要变更内容。
 
+## v1.2.2 - 2026-05-25
+
+### 项目结构重构
+- **前后端分离目录**：后端代码迁移至 `backend/` 目录，前端代码保留在 `frontend/` 目录
+- **规范文件拆分**：CLAUDE.md 按前后端拆分为 `backend/CLAUDE.md` 和 `frontend/CLAUDE.md`
+- **AGENTS.md 精简**：AGENTS.md 仅保留项目通用规范（技术栈、目录结构、通用代码质量、分支规范）
+- **文档更新**：README.md / README_en.md 项目结构图及命令路径同步更新
+
+### 配置变更
+- `pom.xml`、`Dockerfile` 移至 `backend/` 目录
+- `docker-compose.yml` build context 更新为 `./backend`
+- `frontend/vite.config.js` 构建输出路径更新为 `../backend/src/main/resources/static`
+
 ## v1.2.1 - 2026-05-21
 
 ### 优化调整

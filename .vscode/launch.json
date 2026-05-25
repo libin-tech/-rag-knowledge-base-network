@@ -2,11 +2,11 @@
     "configurations": [
         {
             "type": "java",
-            "name": "Spring Boot-RagKnowledgeBaseApplication<rag-knowledge-base>",
+            "name": "Spring Boot-RagKnowledgeBaseApplication<rag>",
             "request": "launch",
-            "cwd": "${workspaceFolder}",
-            "mainClass": "com.bin.ragknowledge.RagKnowledgeBaseApplication",
-            "projectName": "rag-knowledge-base",
+            "cwd": "${workspaceFolder}/backend",
+            "mainClass": "com.bintech.rag.RagKnowledgeBaseApplication",
+            "projectName": "rag",
             "args": "",
             "envFile": "${workspaceFolder}/.env"
         }

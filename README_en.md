@@ -42,41 +42,51 @@ A LangChain4j-based RAG (Retrieval-Augmented Generation) knowledge base system w
 
 ```
 rag-knowledge-base-network/
+├── backend/                                # Spring Boot backend
+│   ├── src/main/java/com/bintech/rag/
+│   │   ├── controller/                    # API controllers
+│   │   ├── service/                       # Core business logic
+│   │   │   ├── dingtalk/                  # DingTalk integration
+│   │   │   └── feishu/                    # Feishu integration
+│   │   ├── repository/                    # Data access layer
+│   │   │   ├── mapper/                    # Mapper interfaces
+│   │   │   └── entity/                    # Entity classes (DO)
+│   │   ├── config/                        # Configuration classes (including Sa-Token)
+│   │   ├── context/                       # Context (ThreadLocal, etc.)
+│   │   └── enums/                         # Enum constants
+│   ├── src/main/resources/
+│   │   ├── application.yml                # System configuration
+│   │   └── static/                        # Frontend build output
+│   ├── pom.xml                            # Maven configuration
+│   └── Dockerfile                         # Backend container build
+│
 ├── frontend/                              # Vue 3 frontend project
 │   ├── src/
-│   │   ├── api/                          # API layer (Axios + Sa-Token interceptor)
-│   │   ├── router/                       # Route config (with auth guard)
+│   │   ├── api/                           # API layer (Axios + Sa-Token interceptor)
+│   │   ├── router/                        # Route config (with auth guard)
 │   │   └── views/
-│   │       ├── Login.vue                 # Login page
+│   │       ├── Login.vue                  # Login page
 │   │       └── admin/
-│   │           ├── Layout.vue            # Admin layout (sidebar + header)
-│   │           ├── Upload.vue            # Document upload
-│   │           ├── Documents.vue         # Document management
-│   │           ├── Chat.vue              # Q&A testing (SSE streaming)
-│   │           ├── Config.vue            # Model configuration
-│   │           ├── Channel.vue           # Message channel configuration
-│   │           └── KnowledgeBase.vue     # Knowledge base management
+│   │           ├── Layout.vue             # Admin layout (sidebar + header)
+│   │           ├── Upload.vue             # Document upload
+│   │           ├── Documents.vue          # Document management
+│   │           ├── Chat.vue               # Q&A testing (SSE streaming)
+│   │           ├── Config.vue             # Model configuration
+│   │           ├── Channel.vue            # Message channel configuration
+│   │           └── KnowledgeBase.vue      # Knowledge base management
 │   ├── package.json
 │   └── vite.config.js
 │
-├── src/main/java/com/bin/ragknowledge/
-│   ├── controller/     # API controllers
-│   ├── service/        # Core business logic
-│   ├── repository/     # Data access layer
-│   │   ├── mapper/    # Mapper interfaces
-│   │   └── entity/    # Entity classes (DO)
-│   ├── config/        # Configuration classes (including Sa-Token)
-│   ├── context/       # Context (ThreadLocal, etc.)
-│   └── enums/         # Enum constants
-│
-└── src/main/resources/
-    ├── application.yml       # System configuration
-    └── static/               # Frontend build output (Vue build target)
+├── .doc/
+│   └── db/                                # Database scripts
+├── docker-compose.yml                     # Container orchestration
+├── AGENTS.md                              # Project-level conventions
+└── CLAUDE.md                              # Sub-convention references
 ```
 
 Core resources:
-- `frontend/`: Vue 3 frontend source code, builds to `src/main/resources/static/`
-- `src/main/resources/application.yml`: system configuration
+- `frontend/`: Vue 3 frontend source code, builds to `backend/src/main/resources/static/`
+- `backend/src/main/resources/application.yml`: system configuration
 - `docker-compose.yml`: all-in-one orchestration for Milvus + MinIO + Etcd + app
 
 ## Quick Start
@@ -105,13 +115,13 @@ Prerequisites:
 
 Steps:
 1. Build frontend: `cd frontend && npm install && npm run build`
-2. Build backend: `mvn clean package -DskipTests`
-3. Run: `java -jar target/rag-knowledge-base-1.1.0.jar`
+2. Build backend: `cd backend && mvn clean package -DskipTests`
+3. Run: `java -jar backend/target/rag-1.2.0.jar`
 4. Stop: terminate the process
 
 ### Option 3: Frontend Dev Mode (Separate Dev Servers)
 
-1. Start backend: `mvn spring-boot:run`
+1. Start backend: `cd backend && mvn spring-boot:run`
 2. Start frontend dev server: `cd frontend && npm run dev`
 3. Access `http://localhost:3000`, API requests auto-proxy to backend at port 8080
 
@@ -119,7 +129,7 @@ Steps:
 
 ### Backend Configuration
 
-File: `src/main/resources/application.yml`
+File: `backend/src/main/resources/application.yml`
 
 | Config | Description |
 |--------|------------|
