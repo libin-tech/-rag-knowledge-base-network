@@ -6,7 +6,7 @@
 
 ## 功能特性
 
-- **RAG 全流程**：PDF 解析、分块、向量化、Milvus 检索、LLM 生成
+- **RAG 全流程**：PDF 解析、分块、向量化、pgvector 检索、LLM 生成
 - **多模型支持**：DashScope（云端）、Ollama（本地）、OpenAI 协议模型可切换
 - **双入口调用**：管理后台页面 + 开放 REST API
 - **流式问答**：支持 SSE 流式输出
@@ -25,7 +25,7 @@
 - LangChain4j 0.36.2
 - MyBatis-Plus 3.5.15
 - PostgreSQL
-- Milvus 2.4.x
+- pgvector (PostgreSQL 扩展)
 - Hutool 5.8.x
 
 ### 前端
@@ -87,7 +87,7 @@ rag-knowledge-base-network/
 核心资源：
 - `frontend/`：Vue 3 前端源码，构建后输出至 `backend/src/main/resources/static/`
 - `backend/src/main/resources/application.yml`：系统配置
-- `docker-compose.yml`：Milvus + MinIO + Etcd + 应用一体化编排
+- `docker-compose.yml`：PostgreSQL (pgvector) + MinIO + 应用一体化编排
 
 ## 快速开始
 
@@ -111,7 +111,7 @@ rag-knowledge-base-network/
 - 已安装 Java 21
 - 已安装 Maven
 - 已安装 Node.js 18+
-- 已准备可访问的 Milvus 与模型服务
+- 已准备可访问的 PostgreSQL (pgvector) 与模型服务
 
 步骤：
 1. 构建前端：`cd frontend && npm install && npm run build`
@@ -133,7 +133,7 @@ rag-knowledge-base-network/
 
 | 配置项 | 说明 |
 |--------|------|
-| `milvus.host` / `milvus.port` | Milvus 地址 |
+| `pgvector.table-name` | 向量存储表名 |
 | `rag.chunk.max-segment-size` | 分块大小 |
 | `rag.chunk.max-overlap-size` | 分块重叠 |
 | `rag.retrieval.max-results` | 检索返回条数 |
@@ -168,7 +168,7 @@ Sa-Token 配置说明（`application.yml` 中 `sa-token` 前缀）：
 | 变量 | 说明 |
 |------|------|
 | `POSTGRES_*` | PostgreSQL 数据库连接 |
-| `MILVUS_*` | Milvus 向量数据库连接 |
+| `POSTGRES_*` | PostgreSQL 数据库连接（含 pgvector 向量存储） |
 | `MINIO_*` | MinIO 文件存储 |
 | `ADMIN_USERNAME` | 管理员用户名（默认：admin） |
 | `ADMIN_PASSWORD` | 管理员密码（默认：admin@2026） |
@@ -258,7 +258,7 @@ Sa-Token 配置说明（`application.yml` 中 `sa-token` 前缀）：
 
 ## 常见问题
 
-- **启动后无法检索到结果**：检查 Milvus 连通性、Embedding 维度与模型是否匹配。
+- **启动后无法检索到结果**：检查 PostgreSQL (pgvector) 连通性、Embedding 维度与模型是否匹配。
 - **回答速度慢**：可降低检索结果数量，或切换更快的模型。
 - **Docker 启动失败**：先执行 `docker-compose logs -f` 查看依赖服务是否健康。
 - **模型配置不生效**：确认保存后刷新页面，必要时重新启动应用。

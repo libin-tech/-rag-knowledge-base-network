@@ -33,7 +33,7 @@ comment on column document_metadata.file_size is '文件大小，单位为字节
 
 comment on column document_metadata.object_key is '对象存储键，格式为：documents/{uuid}/{filename}';
 
-comment on column document_metadata.vector_doc_id is '文档在向量数据库（如Milvus）中的文档ID';
+comment on column document_metadata.vector_doc_id is '文档在向量数据库（pgvector）中的文档ID';
 
 comment on column document_metadata.segment_count is '文档被分割成的文本块（chunk）数量';
 

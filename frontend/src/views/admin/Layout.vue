@@ -36,7 +36,7 @@
           </a-tooltip>
           <a-dropdown :trigger="['click']">
             <a-button type="text" class="header-btn user-btn">
-              <a-avatar size="small" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+              <a-avatar size="small" style="background: #1677ff;">
                 <template #icon><user-outlined /></template>
               </a-avatar>
               <span class="user-name">{{ username }}</span>
@@ -61,19 +61,28 @@
       <a-layout-content class="main-content">
         <router-view />
       </a-layout-content>
+      <a-layout-footer class="layout-footer">
+        &copy; 2026 bin.li.github@gmail.com. All Rights Reserved.
+      </a-layout-footer>
     </a-layout>
   </a-layout>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { message } from 'ant-design-vue'
+import {computed, onMounted, ref} from 'vue'
+import {useRoute, useRouter} from 'vue-router'
+import {message} from 'ant-design-vue'
 import {
-  FileTextOutlined, CloudUploadOutlined, MessageOutlined, ApartmentOutlined,
-  SettingOutlined, UserOutlined, FolderOutlined, LogoutOutlined
+  ApartmentOutlined,
+  CloudUploadOutlined,
+  FileTextOutlined,
+  FolderOutlined,
+  LogoutOutlined,
+  MessageOutlined,
+  SettingOutlined,
+  UserOutlined
 } from '@ant-design/icons-vue'
-import { logout, getKnowledgeBaseList } from '../../api'
+import {getKnowledgeBaseList, logout} from '../../api'
 
 const router = useRouter()
 const route = useRoute()
@@ -123,7 +132,7 @@ async function handleLogout() {
 
 <style scoped>
 .sidebar {
-  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+  background: #001529;
 }
 
 .sidebar-brand {
@@ -189,7 +198,7 @@ async function handleLogout() {
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  color: #4f46e5;
+  color: #1677ff;
 }
 
 .user-btn {
@@ -210,7 +219,18 @@ async function handleLogout() {
   margin: 0;
   padding: 24px;
   background: #f5f7fa;
-  min-height: calc(100vh - 56px);
+  min-height: calc(100vh - 56px - 48px);
+}
+
+.layout-footer {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  border-top: 1px solid #e2e8f0;
 }
 
 :deep(.ant-layout-sider-trigger) {

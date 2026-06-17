@@ -33,9 +33,9 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue'
-import { message } from 'ant-design-vue'
-import { getChannelList, updateChannel } from '../../api'
+import {onMounted, reactive} from 'vue'
+import {message} from 'ant-design-vue'
+import {getChannelList, updateChannel} from '../../api'
 
 const channelData = reactive([])
 
@@ -148,7 +148,7 @@ async function saveConfig(ch) {
   padding: 24px;
   border-radius: 12px;
   margin-bottom: 16px;
-  border-left: 4px solid #4f46e5;
+  border-left: 4px solid #1677ff;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 .channel-header {

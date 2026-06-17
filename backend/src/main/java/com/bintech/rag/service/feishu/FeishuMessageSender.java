@@ -1,7 +1,5 @@
 package com.bintech.rag.service.feishu;
 
-import org.springframework.stereotype.Service;
-
 import com.alibaba.fastjson2.JSONObject;
 import com.bintech.rag.enums.ChannelType;
 import com.bintech.rag.service.MessageChannelService;
@@ -12,11 +10,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.lark.oapi.Client;
 import com.lark.oapi.service.im.v1.model.ReplyMessageReq;
 import com.lark.oapi.service.im.v1.model.ReplyMessageReqBody;
-
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service

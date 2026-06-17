@@ -64,7 +64,7 @@ public class DocumentMetadataEntity extends BaseEntity {
     /**
      * 向量文档ID
      * <p>
-     * 文档在向量数据库（如Milvus）中的文档ID，
+     * 文档在向量数据库（pgvector）中的文档ID，
      * 用于关联文档与其向量化后的数据。
      * </p>
      */

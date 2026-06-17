@@ -6,7 +6,7 @@ A LangChain4j-based RAG (Retrieval-Augmented Generation) knowledge base system w
 
 ## Features
 
-- **End-to-end RAG pipeline**: PDF parsing, chunking, embedding, Milvus retrieval, LLM generation
+- **End-to-end RAG pipeline**: PDF parsing, chunking, embedding, pgvector retrieval, LLM generation
 - **Multi-model support**: switchable DashScope (cloud), Ollama (local), OpenAI-compatible models
 - **Dual access**: web admin pages + REST APIs
 - **Streaming Q&A**: SSE support
@@ -25,7 +25,7 @@ A LangChain4j-based RAG (Retrieval-Augmented Generation) knowledge base system w
 - LangChain4j 0.36.2
 - MyBatis-Plus 3.5.15
 - PostgreSQL
-- Milvus 2.4.x
+- pgvector (PostgreSQL extension)
 - Hutool 5.8.x
 
 ### Frontend
@@ -87,7 +87,7 @@ rag-knowledge-base-network/
 Core resources:
 - `frontend/`: Vue 3 frontend source code, builds to `backend/src/main/resources/static/`
 - `backend/src/main/resources/application.yml`: system configuration
-- `docker-compose.yml`: all-in-one orchestration for Milvus + MinIO + Etcd + app
+- `docker-compose.yml`: all-in-one orchestration for PostgreSQL (pgvector) + MinIO + app
 
 ## Quick Start
 
@@ -111,7 +111,7 @@ Prerequisites:
 - Java 21 installed
 - Maven installed
 - Node.js 18+ installed
-- Accessible Milvus and model service
+- Accessible PostgreSQL (pgvector) and model service
 
 Steps:
 1. Build frontend: `cd frontend && npm install && npm run build`
@@ -133,7 +133,7 @@ File: `backend/src/main/resources/application.yml`
 
 | Config | Description |
 |--------|------------|
-| `milvus.host` / `milvus.port` | Milvus endpoint |
+| `pgvector.table-name` | Vector table name |
 | `rag.chunk.max-segment-size` | chunk size |
 | `rag.chunk.max-overlap-size` | chunk overlap |
 | `rag.retrieval.max-results` | max retrieved segments |
@@ -168,7 +168,7 @@ Refer to `.env.example` for all required environment variables:
 | Variable | Description |
 |----------|-------------|
 | `POSTGRES_*` | PostgreSQL connection |
-| `MILVUS_*` | Milvus vector DB connection |
+| `POSTGRES_*` | PostgreSQL connection (includes pgvector storage) |
 | `MINIO_*` | MinIO file storage |
 | `ADMIN_USERNAME` | Admin username (default: admin) |
 | `ADMIN_PASSWORD` | Admin password (default: admin@2026) |
@@ -258,7 +258,7 @@ Base path: `/admin`
 
 ## FAQ
 
-- **No retrieval results after upload**: check Milvus connectivity and embedding dimension compatibility.
+- **No retrieval results after upload**: check PostgreSQL (pgvector) connectivity and embedding dimension compatibility.
 - **Slow responses**: reduce max results or switch to a faster model.
 - **Docker startup issues**: run `docker-compose logs -f` to check service health.
 - **Config not taking effect**: refresh page after save, restart app if needed.

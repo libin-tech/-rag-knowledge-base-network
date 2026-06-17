@@ -7,7 +7,7 @@ spring:
   application:
     name: rag-knowledge-base
   config:
-    import: "optional:file:.env[.properties]"
+    import: "optional:file:backend/.env[.properties]"
   servlet:
     multipart:
       max-file-size: 50MB
@@ -25,19 +25,19 @@ spring:
       maximum-pool-size: 10
       minimum-idle: 5
 
+
 mybatis-plus:
   type-aliases-package: com.bintech.rag.repository
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
 
-milvus:
-  host: ${MILVUS_HOST:127.0.0.1}
-  port: ${MILVUS_PORT:19530}
-  username: ${MILVUS_USERNAME:root}
-  password: ${MILVUS_PASSWORD:Milvus}
-  collection-name: Enterprise_Knowledge_Base
+pgvector:
+  table-name: vector_embeddings
   dimension: 1024
+  create-table: true
+  use-index: true
+  index-list-size: 100
 
 rag:
   chunk:

@@ -57,10 +57,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { message } from 'ant-design-vue'
-import { ReloadOutlined } from '@ant-design/icons-vue'
-import { getDocuments, deleteDocument, getDocumentPreviewUrl } from '../../api'
+import {onMounted, reactive, ref} from 'vue'
+import {message} from 'ant-design-vue'
+import {ReloadOutlined} from '@ant-design/icons-vue'
+import {deleteDocument, getDocumentPreviewUrl, getDocuments} from '../../api'
 
 const loading = ref(false)
 const dataSource = ref([])
@@ -166,7 +166,7 @@ async function confirmDelete() {
 <style scoped>
 .stats-row { margin-bottom: 24px; }
 .stats-card { border-radius: 12px; }
-.stats-card.primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+.stats-card.primary { background: #1677ff; color: white; }
 .stats-card.success { background: #d1fae5; color: #065f46; }
 .stats-card.danger { background: #fee2e2; color: #991b1b; }
 .stats-card h3 { margin: 0; font-size: 2rem; font-weight: 700; }

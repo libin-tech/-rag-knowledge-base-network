@@ -54,11 +54,9 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
-import {
-  RobotOutlined, UserOutlined, MessageOutlined, SendOutlined, BulbOutlined
-} from '@ant-design/icons-vue'
-import { marked } from 'marked'
+import {nextTick, ref} from 'vue'
+import {BulbOutlined, MessageOutlined, RobotOutlined, SendOutlined, UserOutlined} from '@ant-design/icons-vue'
+import {marked} from 'marked'
 
 const question = ref('')
 const messages = ref([])
@@ -242,20 +240,20 @@ function scrollToBottom() {
   flex-shrink: 0;
 }
 .msg-avatar.user { background: #e2e8f0; color: #4a5568; order: 1; }
-.msg-avatar.assistant { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+.msg-avatar.assistant { background: #1677ff; color: white; }
 .msg-content {
   max-width: 70%;
   padding: 12px 16px;
   border-radius: 12px;
   word-wrap: break-word;
 }
-.message.user .msg-content { background: #4f46e5; color: white; border-bottom-right-radius: 4px; }
+.message.user .msg-content { background: #1677ff; color: white; border-bottom-right-radius: 4px; }
 .message.assistant .msg-content { background: white; color: #2d3748; border-bottom-left-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 .msg-content.error { background: #fed7d7 !important; color: #c53030 !important; }
 .thinking-section { margin-bottom: 8px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px; }
-.thinking-content { font-size: 0.9rem; color: #718096; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border-left: 3px solid #667eea; }
+.thinking-content { font-size: 0.9rem; color: #718096; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border-left: 3px solid #1677ff; }
 .thinking-text { display: flex; align-items: center; gap: 8px; color: #718096; font-size: 0.9rem; padding: 4px 0; }
-.stream-cursor { display: inline-block; width: 2px; height: 1em; background: #4f46e5; margin-left: 2px; animation: blink 0.8s step-end infinite; vertical-align: text-bottom; }
+.stream-cursor { display: inline-block; width: 2px; height: 1em; background: #1677ff; margin-left: 2px; animation: blink 0.8s step-end infinite; vertical-align: text-bottom; }
 @keyframes blink { 50% { opacity: 0; } }
 .token-info {
   margin-top: 8px;
@@ -289,5 +287,5 @@ function scrollToBottom() {
 :deep(.msg-text pre code) { background: transparent; padding: 0; color: inherit; }
 :deep(.msg-text table) { width: 100%; border-collapse: collapse; }
 :deep(.msg-text th, .msg-text td) { border: 1px solid #e2e8f0; padding: 8px; }
-:deep(.msg-text blockquote) { border-left: 4px solid #4f46e5; padding-left: 16px; margin: 12px 0; color: #6c757d; }
+:deep(.msg-text blockquote) { border-left: 4px solid #1677ff; padding-left: 16px; margin: 12px 0; color: #6c757d; }
 </style>

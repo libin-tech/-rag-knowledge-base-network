@@ -1,17 +1,10 @@
 package com.bintech.rag.service;
 
-import java.util.List;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-
-import org.springframework.stereotype.Service;
-
+import cn.hutool.core.date.StopWatch;
+import cn.hutool.core.util.IdUtil;
 import com.bintech.rag.config.EmbeddingModelFactory;
 import com.bintech.rag.config.ModelFactory;
 import com.bintech.rag.config.RagProperties;
-
-import cn.hutool.core.date.StopWatch;
-import cn.hutool.core.util.IdUtil;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.DocumentSplitter;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
@@ -32,6 +25,11 @@ import dev.langchain4j.store.embedding.filter.Filter;
 import dev.langchain4j.store.embedding.filter.MetadataFilterBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * RAG（检索增强生成）服务

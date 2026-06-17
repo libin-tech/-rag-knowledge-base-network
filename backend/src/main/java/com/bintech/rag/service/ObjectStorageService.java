@@ -1,14 +1,7 @@
 package com.bintech.rag.service;
 
 import com.bintech.rag.config.MinioProperties;
-import io.minio.BucketExistsArgs;
-import io.minio.GetObjectArgs;
-import io.minio.MakeBucketArgs;
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
-import io.minio.RemoveObjectArgs;
-import io.minio.StatObjectArgs;
-import io.minio.StatObjectResponse;
+import io.minio.*;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

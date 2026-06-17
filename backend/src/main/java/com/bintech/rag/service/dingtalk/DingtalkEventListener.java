@@ -1,20 +1,18 @@
 package com.bintech.rag.service.dingtalk;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.springframework.stereotype.Component;
-
 import com.bintech.rag.repository.entity.KnowledgeBaseEntity;
 import com.bintech.rag.service.KnowledgeBaseService;
 import com.dingtalk.open.app.api.OpenDingTalkClient;
 import com.dingtalk.open.app.api.OpenDingTalkStreamClientBuilder;
 import com.dingtalk.open.app.api.security.AuthClientCredential;
-
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Component

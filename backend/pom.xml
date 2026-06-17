@@ -14,7 +14,7 @@
 
     <groupId>com.bintech</groupId>
     <artifactId>rag</artifactId>
-    <version>1.2.0</version>
+    <version>1.3.0</version>
     <name>rag-knowledge-base</name>
     <description>RAG企业知识库问答系统</description>
 
@@ -96,7 +96,7 @@
 
         <dependency>
             <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-milvus</artifactId>
+            <artifactId>langchain4j-pgvector</artifactId>
             <version>${langchain4j.version}</version>
         </dependency>
 

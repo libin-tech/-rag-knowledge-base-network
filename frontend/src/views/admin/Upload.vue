@@ -75,12 +75,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { message } from 'ant-design-vue'
-import {
-  CloudUploadOutlined, FolderOpenOutlined, FilePdfOutlined, DeleteOutlined
-} from '@ant-design/icons-vue'
-import { uploadDocument } from '../../api'
+import {ref} from 'vue'
+import {message} from 'ant-design-vue'
+import {CloudUploadOutlined, DeleteOutlined, FilePdfOutlined, FolderOpenOutlined} from '@ant-design/icons-vue'
+import {uploadDocument} from '../../api'
 
 const fileInputRef = ref(null)
 const fileList = ref([])
@@ -151,8 +149,8 @@ async function startUpload() {
 
 .upload-zone:hover,
 .upload-zone.dragover {
-  border-color: #4f46e5;
-  background: #eef2ff;
+  border-color: #1677ff;
+  background: #e6f7ff;
 }
 
 .upload-icon {

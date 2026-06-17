@@ -1,51 +1,40 @@
 package com.bintech.rag.service;
 
+import cn.hutool.core.util.IdUtil;
+import cn.hutool.json.JSONUtil;
+import com.bintech.rag.enums.ChannelType;
+import com.bintech.rag.repository.dao.MessageChannelDAO;
+import com.bintech.rag.repository.entity.MessageChannelEntity;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import cn.hutool.core.util.EnumUtil;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.bintech.rag.enums.ChannelType;
-import com.bintech.rag.repository.entity.MessageChannelEntity;
-import com.bintech.rag.repository.mapper.MessageChannelMapper;
-
-import cn.hutool.core.util.IdUtil;
-import cn.hutool.json.JSONUtil;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class MessageChannelService {
 
-    private final MessageChannelMapper messageChannelMapper;
+    private final MessageChannelDAO messageChannelDAO;
 
     private final Map<String, MessageChannelEntity> channelCache = new ConcurrentHashMap<>();
 
     public List<MessageChannelEntity> listAll() {
-        return messageChannelMapper.selectList(new LambdaQueryWrapper<MessageChannelEntity>()
-                .orderByAsc(MessageChannelEntity::getChannelType));
+        return messageChannelDAO.selectAll();
     }
 
     public List<MessageChannelEntity> listByKnowledgeBaseId(String knowledgeBaseId) {
-        return messageChannelMapper.selectList(new LambdaQueryWrapper<MessageChannelEntity>()
-                .eq(MessageChannelEntity::getKnowledgeBaseId, knowledgeBaseId)
-                .orderByAsc(MessageChannelEntity::getChannelType));
+        return messageChannelDAO.selectByKnowledgeBaseId(knowledgeBaseId);
     }
 
     public MessageChannelEntity getByTypeAndKb(ChannelType channelType, String knowledgeBaseId) {
         String cacheKey = channelType.getCode() + ":" + knowledgeBaseId;
-        return channelCache.computeIfAbsent(cacheKey, k -> messageChannelMapper.selectOne(new LambdaQueryWrapper<MessageChannelEntity>()
-                .eq(MessageChannelEntity::getChannelType, channelType)
-                .eq(MessageChannelEntity::getKnowledgeBaseId, knowledgeBaseId)));
+        return channelCache.computeIfAbsent(cacheKey, k -> messageChannelDAO.selectByTypeAndKb(channelType, knowledgeBaseId));
     }
 
     public MessageChannelEntity getByType(ChannelType channelType) {
@@ -91,12 +80,7 @@ public class MessageChannelService {
         }
 
         try {
-            LambdaUpdateWrapper<MessageChannelEntity> wrapper = new LambdaUpdateWrapper<MessageChannelEntity>()
-                    .eq(MessageChannelEntity::getChannelType, channelType)
-                    .eq(MessageChannelEntity::getKnowledgeBaseId, knowledgeBaseId);
-
-
-            int rows = messageChannelMapper.update(updateEntity, wrapper);
+            int rows = messageChannelDAO.update(updateEntity, channelType, knowledgeBaseId);
 
             String cacheKey = channelType + ":" + knowledgeBaseId;
             channelCache.remove(cacheKey);
@@ -130,11 +114,7 @@ public class MessageChannelService {
         }
 
         try {
-
-            LambdaQueryWrapper<MessageChannelEntity> queryWrapper = new LambdaQueryWrapper<MessageChannelEntity>()
-                    .eq(MessageChannelEntity::getChannelType, channelType)
-                    .eq(MessageChannelEntity::getKnowledgeBaseId, knowledgeBaseId);
-            MessageChannelEntity existing = messageChannelMapper.selectOne(queryWrapper);
+            MessageChannelEntity existing = messageChannelDAO.selectByTypeAndKb(channelType, knowledgeBaseId);
 
             if (existing != null) {
                 entity.setId(existing.getId());
@@ -143,7 +123,7 @@ public class MessageChannelService {
                 entity.setCreateTime(existing.getCreateTime());
                 entity.setCreator(existing.getCreator());
                 entity.setUpdateTime(LocalDateTime.now());
-                messageChannelMapper.updateById(entity);
+                messageChannelDAO.updateById(entity);
                 log.info("消息渠道已更新: channelType={}, knowledgeBaseId={}, id={}",
                         channelType, knowledgeBaseId, existing.getId());
             } else {
@@ -155,7 +135,7 @@ public class MessageChannelService {
                 entity.setCreator(creator);
                 entity.setCreateTime(LocalDateTime.now());
                 entity.setUpdateTime(LocalDateTime.now());
-                messageChannelMapper.insert(entity);
+                messageChannelDAO.insert(entity);
                 log.info("消息渠道已创建: channelType={}, knowledgeBaseId={}, id={}",
                         channelType, knowledgeBaseId, entity.getId());
             }
@@ -197,7 +177,7 @@ public class MessageChannelService {
             feishuChannel.setModifier(creator);
             feishuChannel.setCreateTime(LocalDateTime.now());
             feishuChannel.setUpdateTime(LocalDateTime.now());
-            messageChannelMapper.insert(feishuChannel);
+            messageChannelDAO.insert(feishuChannel);
 
             MessageChannelEntity dingtalkChannel = new MessageChannelEntity();
             dingtalkChannel.setId(cn.hutool.core.util.IdUtil.randomUUID());
@@ -209,7 +189,7 @@ public class MessageChannelService {
             dingtalkChannel.setModifier(creator);
             dingtalkChannel.setCreateTime(LocalDateTime.now());
             dingtalkChannel.setUpdateTime(LocalDateTime.now());
-            messageChannelMapper.insert(dingtalkChannel);
+            messageChannelDAO.insert(dingtalkChannel);
 
             MessageChannelEntity wechatChannel = new MessageChannelEntity();
             wechatChannel.setId(cn.hutool.core.util.IdUtil.randomUUID());
@@ -221,7 +201,7 @@ public class MessageChannelService {
             wechatChannel.setModifier(creator);
             wechatChannel.setCreateTime(LocalDateTime.now());
             wechatChannel.setUpdateTime(LocalDateTime.now());
-            messageChannelMapper.insert(wechatChannel);
+            messageChannelDAO.insert(wechatChannel);
 
             log.info("知识库 {} 已初始化消息渠道", knowledgeBaseId);
         } catch (Exception e) {
@@ -231,25 +211,19 @@ public class MessageChannelService {
     }
 
     private void purgeDeletedRecords(String knowledgeBaseId) {
-        Wrapper<MessageChannelEntity> wrapper = new LambdaQueryWrapper<MessageChannelEntity>()
-                .eq(MessageChannelEntity::getKnowledgeBaseId, knowledgeBaseId);
-        int deletedCount = messageChannelMapper.delete(wrapper);
+        int deletedCount = messageChannelDAO.deleteByKnowledgeBaseId(knowledgeBaseId);
         if (deletedCount > 0) {
             log.info("已物理清理知识库 {} 下的 {} 条已删除消息渠道记录", knowledgeBaseId, deletedCount);
         }
     }
 
     public long countByKnowledgeBaseId(String knowledgeBaseId) {
-        return messageChannelMapper.selectCount(new LambdaQueryWrapper<MessageChannelEntity>()
-                .eq(MessageChannelEntity::getKnowledgeBaseId, knowledgeBaseId));
+        return messageChannelDAO.countByKnowledgeBaseId(knowledgeBaseId);
     }
 
     @Transactional
     public void deleteByKnowledgeBaseId(String knowledgeBaseId) {
-        Wrapper<MessageChannelEntity> wrapper = new LambdaQueryWrapper<MessageChannelEntity>()
-                .eq(MessageChannelEntity::getKnowledgeBaseId, knowledgeBaseId);
-        messageChannelMapper.delete(wrapper);
-
+        messageChannelDAO.deleteByKnowledgeBaseId(knowledgeBaseId);
         log.info("知识库 {} 的消息渠道已彻底删除", knowledgeBaseId);
     }
 

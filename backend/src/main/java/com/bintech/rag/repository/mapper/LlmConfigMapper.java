@@ -1,7 +1,7 @@
 package com.bintech.rag.repository.mapper;
 
-import com.bintech.rag.repository.entity.LlmConfigEntity;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.bintech.rag.repository.entity.LlmConfigEntity;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper

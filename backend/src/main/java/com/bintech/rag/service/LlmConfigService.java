@@ -1,39 +1,34 @@
 package com.bintech.rag.service;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import cn.hutool.core.util.IdUtil;
 import com.bintech.rag.config.EmbeddingConfig;
 import com.bintech.rag.config.LlmConfig;
 import com.bintech.rag.enums.EmbeddingConfigKey;
 import com.bintech.rag.enums.LlmConfigKey;
+import com.bintech.rag.repository.dao.LlmConfigDAO;
 import com.bintech.rag.repository.entity.LlmConfigEntity;
-import com.bintech.rag.repository.mapper.LlmConfigMapper;
-
-import cn.hutool.core.util.IdUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class LlmConfigService {
 
-    private final LlmConfigMapper llmConfigMapper;
+    private final LlmConfigDAO llmConfigDAO;
 
     public static final String CONFIG_TYPE_LLM = "LLM";
     public static final String CONFIG_TYPE_EMBEDDING = "EMBEDDING";
 
     public List<LlmConfigEntity> listByType(String configType) {
-        return llmConfigMapper.selectList(new LambdaQueryWrapper<LlmConfigEntity>()
-                .eq(LlmConfigEntity::getConfigType, configType));
+        return llmConfigDAO.selectByType(configType);
     }
 
     public Map<String, String> getConfigMap(String configType) {
@@ -125,10 +120,7 @@ public class LlmConfigService {
     }
 
     public String getValue(String configType, String configKey) {
-        LambdaQueryWrapper<LlmConfigEntity> wrapper = new LambdaQueryWrapper<LlmConfigEntity>()
-                .eq(LlmConfigEntity::getConfigType, configType)
-                .eq(LlmConfigEntity::getConfigKey, configKey);
-        LlmConfigEntity entity = llmConfigMapper.selectOne(wrapper);
+        LlmConfigEntity entity = llmConfigDAO.selectByTypeAndKey(configType, configKey);
         return entity != null ? entity.getConfigValue() : null;
     }
 
@@ -147,13 +139,10 @@ public class LlmConfigService {
         }
 
         try {
-            LambdaUpdateWrapper<LlmConfigEntity> wrapper = new LambdaUpdateWrapper<LlmConfigEntity>()
-                    .eq(LlmConfigEntity::getConfigType, configType)
-                    .eq(LlmConfigEntity::getConfigKey, configKey);
             LlmConfigEntity entity = new LlmConfigEntity();
             entity.setConfigValue(configValue);
             entity.setModifier(modifier);
-            int rows = llmConfigMapper.update(entity, wrapper);
+            int rows = llmConfigDAO.update(entity, configType, configKey);
             if (rows > 0) {
                 log.info("配置更新成功: {}.{} = {}, modifier={}", configType, configKey, configValue, modifier);
             } else {
@@ -167,7 +156,7 @@ public class LlmConfigService {
                 newEntity.setEnabled(true);
                 newEntity.setCreateTime(LocalDateTime.now());
                 newEntity.setUpdateTime(LocalDateTime.now());
-                llmConfigMapper.insert(newEntity);
+                llmConfigDAO.insert(newEntity);
                 log.info("配置创建成功: {}.{} = {}, creator={}", configType, configKey, configValue, modifier);
             }
         } catch (Exception e) {
@@ -179,15 +168,12 @@ public class LlmConfigService {
 
     @Transactional
     public void saveOrUpdate(String configType, String configKey, String configValue, String remark, String creator) {
-        LambdaQueryWrapper<LlmConfigEntity> wrapper = new LambdaQueryWrapper<LlmConfigEntity>()
-                .eq(LlmConfigEntity::getConfigType, configType)
-                .eq(LlmConfigEntity::getConfigKey, configKey);
-        LlmConfigEntity existing = llmConfigMapper.selectOne(wrapper);
+        LlmConfigEntity existing = llmConfigDAO.selectByTypeAndKey(configType, configKey);
 
         if (existing != null) {
             existing.setConfigValue(configValue);
             existing.setRemark(remark);
-            llmConfigMapper.updateById(existing);
+            llmConfigDAO.updateById(existing);
         } else {
             LlmConfigEntity entity = new LlmConfigEntity();
             entity.setId(IdUtil.randomUUID());
@@ -197,7 +183,7 @@ public class LlmConfigService {
             entity.setRemark(remark);
             entity.setCreator(creator);
             entity.setModifier(creator);
-            llmConfigMapper.insert(entity);
+            llmConfigDAO.insert(entity);
         }
     }
 
@@ -207,37 +193,22 @@ public class LlmConfigService {
         if (modelName != null) {
             disableAllByModelName(configType, modelName, modifier);
         }
-        LambdaUpdateWrapper<LlmConfigEntity> wrapper = new LambdaUpdateWrapper<LlmConfigEntity>()
-                .eq(LlmConfigEntity::getConfigType, configType)
-                .eq(LlmConfigEntity::getConfigKey, configKey)
-                .set(LlmConfigEntity::getEnabled, true)
-                .set(LlmConfigEntity::getModifier, modifier);
-        llmConfigMapper.update(null, wrapper);
+        llmConfigDAO.updateEnabledByConfigKey(configType, configKey, true, modifier);
         log.info("配置启用成功: {}.{}", configType, configKey);
     }
 
     @Transactional
     public void disableConfig(String configType, String configKey, String modifier) {
-        LambdaUpdateWrapper<LlmConfigEntity> wrapper = new LambdaUpdateWrapper<LlmConfigEntity>()
-                .eq(LlmConfigEntity::getConfigType, configType)
-                .eq(LlmConfigEntity::getConfigKey, configKey)
-                .set(LlmConfigEntity::getEnabled, false)
-                .set(LlmConfigEntity::getModifier, modifier);
-        llmConfigMapper.update(null, wrapper);
+        llmConfigDAO.updateEnabledByConfigKey(configType, configKey, false, modifier);
         log.info("配置停用成功: {}.{}", configType, configKey);
     }
 
     private void disableAllByModelName(String configType, String modelName, String modifier) {
-        List<LlmConfigEntity> enabledConfigs = llmConfigMapper.selectList(
-                new LambdaQueryWrapper<LlmConfigEntity>()
-                        .eq(LlmConfigEntity::getConfigType, configType)
-                        .eq(LlmConfigEntity::getEnabled, true)
-                        .like(LlmConfigEntity::getConfigKey, modelName)
-        );
+        List<LlmConfigEntity> enabledConfigs = llmConfigDAO.selectEnabledByTypeAndKeyLike(configType, modelName);
         for (LlmConfigEntity config : enabledConfigs) {
             config.setEnabled(false);
             config.setModifier(modifier);
-            llmConfigMapper.updateById(config);
+            llmConfigDAO.updateById(config);
             log.info("配置自动停用: {}.{}", configType, config.getConfigKey());
         }
     }

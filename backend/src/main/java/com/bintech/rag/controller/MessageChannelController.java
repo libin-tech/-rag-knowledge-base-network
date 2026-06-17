@@ -1,18 +1,5 @@
 package com.bintech.rag.controller;
 
-import java.util.List;
-import java.util.Map;
-
-import cn.hutool.core.util.EnumUtil;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.bintech.rag.enums.ChannelType;
 import com.bintech.rag.repository.entity.MessageChannelEntity;
 import com.bintech.rag.service.MessageChannelService;
@@ -20,9 +7,13 @@ import com.bintech.rag.service.dingtalk.DingtalkEventListener;
 import com.bintech.rag.service.dingtalk.DingtalkMessageSender;
 import com.bintech.rag.service.feishu.FeishuEventListener;
 import com.bintech.rag.service.feishu.FeishuMessageSender;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController

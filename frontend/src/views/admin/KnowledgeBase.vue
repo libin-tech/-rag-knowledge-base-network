@@ -47,10 +47,16 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { message } from 'ant-design-vue'
-import { PlusOutlined } from '@ant-design/icons-vue'
-import { getAllKnowledgeBases, getKnowledgeBase, createKnowledgeBase, updateKnowledgeBase, deleteKnowledgeBase, checkKnowledgeBaseDelete } from '../../api'
+import {onMounted, reactive, ref} from 'vue'
+import {message} from 'ant-design-vue'
+import {PlusOutlined} from '@ant-design/icons-vue'
+import {
+  checkKnowledgeBaseDelete,
+  createKnowledgeBase,
+  deleteKnowledgeBase,
+  getAllKnowledgeBases,
+  updateKnowledgeBase
+} from '../../api'
 
 const loading = ref(false)
 const dataSource = ref([])
@@ -65,6 +71,7 @@ const form = reactive({
 const editingId = ref(null)
 
 const columns = [
+  { title: 'ID', dataIndex: 'id', key: 'id', width: 220 },
   { title: '名称', dataIndex: 'name', key: 'name' },
   { title: '描述', dataIndex: 'description', key: 'description' },
   { title: '状态', key: 'status' },

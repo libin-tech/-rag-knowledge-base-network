@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import {createRouter, createWebHistory} from 'vue-router'
 import Login from '../views/Login.vue'
 import AdminLayout from '../views/admin/Layout.vue'
 import Upload from '../views/admin/Upload.vue'

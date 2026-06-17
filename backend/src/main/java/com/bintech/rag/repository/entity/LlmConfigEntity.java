@@ -1,7 +1,6 @@
 package com.bintech.rag.repository.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.bintech.rag.enums.LlmConfigKey;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

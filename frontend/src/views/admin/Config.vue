@@ -152,9 +152,9 @@
 </template>
 
 <script setup>
-import { reactive, ref, computed, onMounted } from 'vue'
-import { message } from 'ant-design-vue'
-import { getLlmConfig, getEmbeddingConfig, updateLlmConfig, updateEmbeddingConfig } from '../../api'
+import {computed, onMounted, reactive, ref} from 'vue'
+import {message} from 'ant-design-vue'
+import {getEmbeddingConfig, getLlmConfig, updateEmbeddingConfig, updateLlmConfig} from '../../api'
 
 const llmSaving = ref(false)
 const embedSaving = ref(false)

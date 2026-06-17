@@ -1,11 +1,10 @@
 package com.bintech.rag.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.bintech.rag.repository.dao.DocumentMetadataDAO;
+import com.bintech.rag.repository.dao.KnowledgeBaseDAO;
 import com.bintech.rag.repository.entity.DocumentMetadataEntity;
 import com.bintech.rag.repository.entity.KnowledgeBaseEntity;
-import com.bintech.rag.repository.mapper.DocumentMetadataMapper;
-import com.bintech.rag.repository.mapper.KnowledgeBaseMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,8 +27,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class KnowledgeBaseService {
 
-    private final KnowledgeBaseMapper knowledgeBaseMapper;
-    private final DocumentMetadataMapper documentMetadataMapper;
+    private final KnowledgeBaseDAO knowledgeBaseDAO;
+    private final DocumentMetadataDAO documentMetadataDAO;
     private final MessageChannelService messageChannelService;
     private final RagService ragService;
 
@@ -76,7 +75,7 @@ public class KnowledgeBaseService {
         entity.setModifier(entity.getCreator());
         
         try {
-            knowledgeBaseMapper.insert(entity);
+            knowledgeBaseDAO.insert(entity);
             log.info("知识库记录已插入数据库: id={}, name={}", entity.getId(), entity.getName());
             
             // 初始化消息渠道
@@ -109,7 +108,7 @@ public class KnowledgeBaseService {
         }
         
         // 检查知识库是否存在
-        KnowledgeBaseEntity existing = knowledgeBaseMapper.selectById(entity.getId());
+        KnowledgeBaseEntity existing = knowledgeBaseDAO.selectById(entity.getId());
         if (existing == null) {
             throw new IllegalArgumentException("知识库不存在: " + entity.getId());
         }
@@ -124,7 +123,7 @@ public class KnowledgeBaseService {
         entity.setUpdateTime(LocalDateTime.now());
         
         try {
-            int rows = knowledgeBaseMapper.updateById(entity);
+            int rows = knowledgeBaseDAO.updateById(entity);
             if (rows > 0) {
                 log.info("知识库更新成功: id={}", entity.getId());
                 return true;
@@ -173,7 +172,7 @@ public class KnowledgeBaseService {
         }
         
         // 删除知识库
-        knowledgeBaseMapper.deleteById(id);
+        knowledgeBaseDAO.deleteById(id);
         
         result.put("success", true);
         result.put("message", "知识库及相关数据已删除");
@@ -186,66 +185,56 @@ public class KnowledgeBaseService {
      * 根据ID获取知识库
      */
     public KnowledgeBaseEntity getById(String id) {
-        return knowledgeBaseMapper.selectById(id);
+        return knowledgeBaseDAO.selectById(id);
     }
 
     /**
      * 获取所有启用的知识库
      */
     public List<KnowledgeBaseEntity> listEnabled() {
-        QueryWrapper<KnowledgeBaseEntity> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("enabled", true);
-        queryWrapper.orderByDesc("create_time");
-        return knowledgeBaseMapper.selectList(queryWrapper);
+        return knowledgeBaseDAO.selectEnabled();
     }
 
     /**
      * 获取所有知识库
      */
     public List<KnowledgeBaseEntity> listAll() {
-        return knowledgeBaseMapper.selectList(null);
+        return knowledgeBaseDAO.selectAll();
     }
 
     /**
      * 分页查询知识库
      */
     public Page<KnowledgeBaseEntity> page(int current, int size) {
-        Page<KnowledgeBaseEntity> page = new Page<>(current, size);
-        QueryWrapper<KnowledgeBaseEntity> queryWrapper = new QueryWrapper<>();
-        queryWrapper.orderByDesc("create_time");
-        return knowledgeBaseMapper.selectPage(page, queryWrapper);
+        return knowledgeBaseDAO.selectPage(current, size);
     }
 
     /**
      * 获取默认知识库
      */
     public KnowledgeBaseEntity getDefault() {
-        return knowledgeBaseMapper.selectById("default");
+        return knowledgeBaseDAO.selectById("default");
     }
 
     /**
      * 检查知识库是否存在
      */
     public boolean exists(String id) {
-        return knowledgeBaseMapper.selectById(id) != null;
+        return knowledgeBaseDAO.selectById(id) != null;
     }
 
     /**
      * 检查知识库名称是否已存在
      */
     public boolean existsByName(String name) {
-        return knowledgeBaseMapper.selectCount(new QueryWrapper<KnowledgeBaseEntity>()
-                .eq("name", name)
-                .eq("deleted", false)) > 0;
+        return knowledgeBaseDAO.countByName(name) > 0;
     }
 
     /**
      * 统计知识库下的文档数量
      */
     public long countDocuments(String knowledgeBaseId) {
-        return documentMetadataMapper.selectCount(new QueryWrapper<DocumentMetadataEntity>()
-                .eq("knowledge_base_id", knowledgeBaseId)
-                .eq("deleted", false));
+        return documentMetadataDAO.countByKnowledgeBaseId(knowledgeBaseId);
     }
 
     /**
@@ -265,9 +254,7 @@ public class KnowledgeBaseService {
      */
     @Transactional
     public void deleteDocuments(String knowledgeBaseId) {
-        List<DocumentMetadataEntity> documents = documentMetadataMapper.selectList(new QueryWrapper<DocumentMetadataEntity>()
-                .eq("knowledge_base_id", knowledgeBaseId)
-                .eq("deleted", false));
+        List<DocumentMetadataEntity> documents = documentMetadataDAO.selectByKnowledgeBaseIdWithDeletedCheck(knowledgeBaseId);
         
         for (DocumentMetadataEntity doc : documents) {
             // 删除向量数据
@@ -275,7 +262,7 @@ public class KnowledgeBaseService {
                 List<String> vectorIds = cn.hutool.json.JSONUtil.toList(doc.getVectorIds(), String.class);
                 ragService.deleteDocumentVectors(vectorIds);
             }
-            documentMetadataMapper.deleteById(doc.getId());
+            documentMetadataDAO.deleteById(doc.getId());
         }
         log.info("知识库 {} 的文档已删除", knowledgeBaseId);
     }
